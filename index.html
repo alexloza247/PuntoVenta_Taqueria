@@ -103,6 +103,7 @@
   }
   .sec-title:first-child { margin-top: 0; }
   .empty-state { color: var(--muted); font-size: 16px; padding: 24px 8px; }
+  #comandasActivas .empty-state, #comandasCompletadas .empty-state { text-align: center; }
   .sec-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
@@ -450,7 +451,7 @@
 
   /* ---------- Pantalla de ventas ---------- */
   .ventas-wrap { flex: 1; min-height: 0; display: flex; flex-direction: column; }
-  .ventas-summary { display: flex; gap: 12px; padding: 14px 18px 0; }
+  .ventas-summary { display: flex; gap: 12px; padding: 14px 20px 0; width: 100%; max-width: 1200px; margin: 0 auto; }
   .vs-card {
     flex: 1; min-width: 0;
     background: var(--panel);
@@ -461,7 +462,7 @@
   }
   .vs-card .vs-label { display: block; font-size: 12px; font-weight: 800; letter-spacing: .5px; text-transform: uppercase; color: var(--muted); }
   .vs-card .vs-value { display: block; font-size: 24px; font-weight: 900; color: var(--accent); font-variant-numeric: tabular-nums; margin-top: 4px; }
-  .ventas-body { flex: 1; min-height: 0; overflow-y: auto; padding: 14px 18px; }
+  .ventas-body { flex: 1; min-height: 0; overflow-y: auto; padding: 14px 20px; width: 100%; max-width: 1200px; margin: 0 auto; }
   .venta-card {
     background: var(--panel);
     border: 1px solid var(--border);
@@ -486,7 +487,7 @@
   }
   .vc-badge.warn { background: #fdecec; color: #b91c1c; border-color: #f3c6c6; }
   .ventas-empty { text-align: center; color: var(--muted); font-size: 16px; padding: 48px 16px; }
-  .ventas-actions { display: flex; justify-content: flex-end; padding: 0 18px 14px; }
+  .ventas-actions { display: flex; justify-content: flex-end; padding: 0 20px 14px; width: 100%; max-width: 1200px; margin: 0 auto; }
   .btn-link-danger {
     background: transparent;
     border: 1px solid #f3c6c6;
@@ -503,7 +504,7 @@
   .comandas-col { flex: 1; min-width: 0; overflow-y: auto; padding: 0 12px; }
   .comandas-col:first-child { padding-left: 0; }
   .comandas-col:last-child { padding-right: 0; border-left: 2px solid var(--border); }
-  .comandas-col h2 { font-size: 19px; color: var(--accent); margin: 0 0 10px; }
+  .comandas-col h2 { font-size: 19px; color: var(--accent); margin: 12px 0 10px 8px; }
   .comanda-card {
     background: var(--panel);
     border: 1px solid var(--border);
