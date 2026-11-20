@@ -15,9 +15,10 @@ Punto de venta web para una taquería: toca los productos para armar el ticket, 
 
 El catálogo está fijo en el código (objeto `CATALOG` al inicio del `<script>` en `index.html`), fácil de editar:
 
-- Pestaña **Tacos**, sección **Órdenes** (la orden a $130.00): Suadero, Cuero, Adobada, Campechano
-- Pestaña **Tacos**, sección **Taco individual** ($32.50 c/u): Suadero, Cuero, Adobada, Campechano
+- Pestaña **Tacos**, sección **Órdenes** (la orden a $130.00): Orden de suadero, Orden de cuero, Orden de adobada, Orden de campechano
+- Pestaña **Tacos**, sección **Taco individual** ($32.50 c/u): Taco de suadero, Taco de cuero, Taco de adobada, Taco de campechano
 - Pestaña **Bebidas** ($30.00 c/u): Coca Cola, Sprite, Fanta, Agua de Jamaica, Agua de limón, Agua de horchata
+- Pestaña **Otros**: sin productos por ahora (se agregan después en el `CATALOG`)
 
 La app usa los colores de la taquería (verde y blanco, con el emblema circular de "El Vergel" en la esquina superior izquierda).
 

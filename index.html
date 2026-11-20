@@ -98,6 +98,7 @@
     margin: 16px 0 10px;
   }
   .sec-title:first-child { margin-top: 0; }
+  .empty-state { color: var(--muted); font-size: 16px; padding: 24px 8px; }
   .sec-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
@@ -122,7 +123,7 @@
   }
   .tile:active { transform: scale(.96); }
   .tile .price { font-size: 28px; font-weight: 800; }
-  .tile .name { font-size: 21px; font-weight: 700; line-height: 1.15; }
+  .tile .name { font-size: 21px; font-weight: 700; line-height: 1.15; overflow-wrap: break-word; }
   .tile .qty-badge {
     align-self: flex-end;
     background: rgba(0,0,0,.45);
@@ -155,7 +156,7 @@
     border-bottom: 1px solid var(--border);
   }
   .titem .tname { flex: 1; min-width: 0; }
-  .titem .tname b { display: block; font-size: 15px; }
+  .titem .tname b { display: block; font-size: 15px; white-space: normal; overflow-wrap: break-word; }
   .titem .tname small { color: var(--muted); font-size: 12px; }
   .qbtn {
     width: 36px; height: 36px;
@@ -411,16 +412,16 @@
 const CATALOG = [
   { id: 'tacos', label: 'Tacos', sections: [
     { id: 'ordenes', label: 'Órdenes', items: [
-      { id: 'suadero',    name: 'Suadero',    price: 130, color: '#1e5631' },
-      { id: 'cuero',      name: 'Cuero',      price: 130, color: '#276749' },
-      { id: 'adobada',    name: 'Adobada',    price: 130, color: '#2f855a' },
-      { id: 'campechano', name: 'Campechano', price: 130, color: '#38a169' },
+      { id: 'suadero',    name: 'Orden de suadero',    price: 130, color: '#1e5631' },
+      { id: 'cuero',      name: 'Orden de cuero',      price: 130, color: '#276749' },
+      { id: 'adobada',    name: 'Orden de adobada',    price: 130, color: '#2f855a' },
+      { id: 'campechano', name: 'Orden de campechano', price: 130, color: '#38a169' },
     ]},
     { id: 'individual', label: 'Taco individual', items: [
-      { id: 'suadero-ind',    name: 'Suadero',    price: 32.50, color: '#1e5631' },
-      { id: 'cuero-ind',      name: 'Cuero',      price: 32.50, color: '#276749' },
-      { id: 'adobada-ind',    name: 'Adobada',    price: 32.50, color: '#2f855a' },
-      { id: 'campechano-ind', name: 'Campechano', price: 32.50, color: '#38a169' },
+      { id: 'suadero-ind',    name: 'Taco de suadero',    price: 32.50, color: '#1e5631' },
+      { id: 'cuero-ind',      name: 'Taco de cuero',      price: 32.50, color: '#276749' },
+      { id: 'adobada-ind',    name: 'Taco de adobada',    price: 32.50, color: '#2f855a' },
+      { id: 'campechano-ind', name: 'Taco de campechano', price: 32.50, color: '#38a169' },
     ]},
   ]},
   { id: 'bebidas', label: 'Bebidas', sections: [
@@ -432,6 +433,9 @@ const CATALOG = [
       { id: 'limon',    name: 'Agua de limón',   price: 30, color: '#33691e' },
       { id: 'horchata', name: 'Agua de horchata', price: 30, color: '#2e7d32' },
     ]},
+  ]},
+  { id: 'otros', label: 'Otros', sections: [
+    { id: 'otros', label: null, items: [] },
   ]},
 ];
 
@@ -528,6 +532,12 @@ function renderGrid() {
     }
     const g = document.createElement('div');
     g.className = 'sec-grid';
+    if (!sec.items.length) {
+      const e = document.createElement('div');
+      e.className = 'empty-state';
+      e.textContent = 'Sin productos por ahora';
+      g.appendChild(e);
+    }
     sec.items.forEach(p => g.appendChild(makeTile(p)));
     grid.appendChild(g);
   });
