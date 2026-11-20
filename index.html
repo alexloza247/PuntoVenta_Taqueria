@@ -1025,6 +1025,7 @@ const LS_CONFIG_TAB = 'pvtaqueria_config_tab';
 const LS_PRINTER = 'pvtaqueria_printer';
 const LS_DEVICES = 'pvtaqueria_devices';
 const LS_NOMBRE = 'pvtaqueria_nombre';
+const LS_SUCURSAL = 'pvtaqueria_sucursal';
 
 let catalog = load(LS_CATALOG, null);
 if (!catalog) catalog = JSON.parse(JSON.stringify(CATALOG_DEFAULTS));
@@ -1058,7 +1059,24 @@ cortes.forEach(c => { if (c && !c.type) c.type = 'Z'; });   // cortes viejos = Z
 let lastCorteIndex = load(LS_LASTCUT, 0);        // sales index since last corte (when no session)
 let configTab = load(LS_CONFIG_TAB, 'productos');
 if (configTab !== 'productos' && configTab !== 'dispositivos' && configTab !== 'general') configTab = 'productos';
-let nombreSucursal = load(LS_NOMBRE, null) || "Taquería 'El Vergel'";
+const NOMBRE_BASE = "Taquería 'El Vergel'";
+let sucursalSuffix = load(LS_SUCURSAL, null) || '';
+// Migración: si antes se guardó un nombre completo, úsalo como sucursal
+(function migrateNombreSucursal() {
+  if (localStorage.getItem(LS_SUCURSAL) !== null) return;
+  const prev = load(LS_NOMBRE, null);
+  if (typeof prev !== 'string') return;
+  const v = prev.trim();
+  if (!v || v === NOMBRE_BASE) return;
+  const idx = v.indexOf(' - ');
+  const suf = (idx !== -1 ? v.slice(idx + 3) : v).trim();
+  if (suf) { sucursalSuffix = suf; save(LS_SUCURSAL, sucursalSuffix); }
+})();
+function nombreCompleto() {
+  const s = String(sucursalSuffix || '').trim();
+  return s ? NOMBRE_BASE + ' - ' + s : NOMBRE_BASE;
+}
+let nombreSucursal = nombreCompleto();
 let printerSettings = load(LS_PRINTER, null) || { nombre: '', ancho: 80, autoPrint: false };
 if (printerSettings.ancho !== 58 && printerSettings.ancho !== 80) printerSettings.ancho = 80;
 let devices = load(LS_DEVICES, null);
@@ -1703,6 +1721,7 @@ function nombreHtml(name) {
   return escapeHtml(name);
 }
 function applyNombreSucursal() {
+  nombreSucursal = nombreCompleto();
   const ht = document.getElementById('homeTitle');
   if (ht) ht.innerHTML = nombreHtml(nombreSucursal);
   const pb = document.getElementById('posBrand');
@@ -1726,8 +1745,8 @@ function renderGeneral() {
   f.appendChild(lbl);
   const inp = document.createElement('input');
   inp.type = 'text';
-  inp.value = nombreSucursal;
-  inp.placeholder = "Taquería 'El Vergel'";
+  inp.value = sucursalSuffix;
+  inp.placeholder = 'Ej. Allende';
   inp.maxLength = 80;
   f.appendChild(inp);
   sec.appendChild(f);
@@ -1735,10 +1754,8 @@ function renderGeneral() {
   btnSave.className = 'btn-print-test';
   btnSave.textContent = 'Guardar';
   btnSave.addEventListener('click', () => {
-    const v = inp.value.trim();
-    if (!v) { inp.value = nombreSucursal; toast('El nombre no puede estar vacío'); return; }
-    nombreSucursal = v;
-    save(LS_NOMBRE, nombreSucursal);
+    sucursalSuffix = inp.value.trim();
+    save(LS_SUCURSAL, sucursalSuffix);
     applyNombreSucursal();
     toast('Nombre actualizado');
   });
@@ -1995,7 +2012,7 @@ function renderDevices() {
 /* ================= Impresión de tickets ================= */
 function buildPrintTicketHtml(sale, esPrueba) {
   const items = sale.items.map(i => '<div class="pt-row"><span>' + i.qty + 'x ' + escapeHtml(i.name) + '</span><span>' + fmt(i.subtotal) + '</span></div>').join('');
-  return '<div class="pt-head"><div class="pt-title">' + escapeHtml(nombreSucursal) + '</div>' +
+  return '<div class="pt-head"><div class="pt-title">' + escapeHtml(nombreCompleto()) + '</div>' +
     (printerSettings.nombre ? '<div class="pt-sub">' + escapeHtml(printerSettings.nombre) + '</div>' : '') +
     '<div class="pt-sub">' + (esPrueba ? 'Ticket de prueba' : fmtDateTime(sale.datetime)) + '</div></div>' +
     '<div class="pt-line"></div>' + items + '<div class="pt-line"></div>' +
