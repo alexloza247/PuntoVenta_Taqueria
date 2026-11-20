@@ -466,9 +466,30 @@
   .ventas-daynav { display: flex; align-items: center; justify-content: center; gap: 12px; padding: 12px 20px 0; width: 100%; max-width: 1200px; margin: 0 auto; }
   .vn-btn { border: 1px solid var(--border); background: var(--panel); color: var(--accent); font-size: 24px; font-weight: 800; width: 44px; height: 44px; border-radius: 10px; cursor: pointer; line-height: 1; padding: 0; }
   .vn-btn:disabled { opacity: .35; cursor: not-allowed; }
-  .vn-label { font-size: 16px; font-weight: 800; color: var(--accent-d); min-width: 200px; text-align: center; }
-  .vn-date-wrap { position: relative; display: inline-flex; align-items: center; }
-  .vn-date-input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; border: none; padding: 0; margin: 0; background: transparent; color: transparent; }
+  .vn-label {
+    font-family: inherit; font-size: 16px; font-weight: 800; color: var(--accent-d);
+    background: transparent; border: none; cursor: pointer;
+    min-width: 200px; text-align: center; padding: 8px 10px; border-radius: 10px;
+  }
+  .vn-label:hover { background: var(--panel2); }
+  /* Calendario propio de Ventas */
+  .cal-modal { max-width: 360px; }
+  .cal-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 12px; }
+  .cal-title { font-size: 17px; font-weight: 800; color: var(--accent-d); text-align: center; flex: 1; }
+  .cal-nav { border: 1px solid var(--border); background: var(--panel); color: var(--accent); font-size: 20px; font-weight: 800; width: 40px; height: 40px; border-radius: 10px; cursor: pointer; line-height: 1; padding: 0; flex: none; }
+  .cal-nav:disabled { opacity: .35; cursor: not-allowed; }
+  .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+  .cal-dow { text-align: center; font-size: 12px; font-weight: 800; color: var(--muted); padding: 2px 0 6px; }
+  .cal-empty { aspect-ratio: 1; }
+  .cal-day { position: relative; aspect-ratio: 1; border: 1px solid transparent; background: transparent; border-radius: 10px; font-family: inherit; font-size: 15px; font-weight: 700; color: var(--accent-d); cursor: pointer; padding: 0; }
+  .cal-day:hover { background: var(--panel2); }
+  .cal-day.today { border-color: var(--accent); }
+  .cal-day.selected { background: var(--accent); color: #fff; }
+  .cal-day.selected:hover { background: var(--accent); }
+  .cal-day.disabled { color: #c3cdc5; cursor: not-allowed; }
+  .cal-day.disabled:hover { background: transparent; }
+  .cal-day.has-sales::after { content: ''; position: absolute; bottom: 4px; left: 50%; transform: translateX(-50%); width: 5px; height: 5px; border-radius: 50%; background: var(--accent); }
+  .cal-day.selected.has-sales::after { background: #fff; }
   .ventas-day { font-size: 15px; font-weight: 800; color: var(--accent); margin: 6px 0 10px; padding-bottom: 6px; border-bottom: 2px solid var(--border); }
   .venta-card {
     background: var(--panel);
@@ -915,10 +936,7 @@
   <div class="ventas-wrap">
     <div class="ventas-daynav">
       <button class="vn-btn" id="btnVentasPrev" aria-label="Día anterior">‹</button>
-      <span class="vn-date-wrap">
-        <span class="vn-label" id="ventasDayLabel">Hoy</span>
-        <input type="date" id="inpVentasFecha" class="vn-date-input" aria-label="Elegir día">
-      </span>
+      <button type="button" class="vn-label" id="ventasDayLabel" aria-label="Elegir día">Hoy</button>
       <button class="vn-btn" id="btnVentasNext" aria-label="Día siguiente">›</button>
     </div>
     <div class="ventas-summary">
@@ -931,6 +949,21 @@
     </div>
   </div>
 </section>
+
+<!-- Modal calendario de Ventas -->
+<div class="overlay" id="ovCalVentas">
+  <div class="modal cal-modal">
+    <div class="cal-head">
+      <button type="button" class="cal-nav" id="btnCalPrev" aria-label="Mes anterior">‹</button>
+      <span class="cal-title" id="calVentasTitle">—</span>
+      <button type="button" class="cal-nav" id="btnCalNext" aria-label="Mes siguiente">›</button>
+    </div>
+    <div class="cal-grid" id="calVentasGrid"></div>
+    <div class="modal-btns">
+      <button type="button" class="btn-cancel" data-close="ovCalVentas">Cancelar</button>
+    </div>
+  </div>
+</div>
 
 <!-- Modal Cobrar -->
 <div class="overlay" id="ovCobrar">
@@ -1629,16 +1662,69 @@ function fmtDayLabel(d) {
   const isToday = dayKeyOf(d.toISOString()) === dayKeyOf(new Date().toISOString());
   return isToday ? 'Hoy — ' + dateStr : DIAS_SEMANA[d.getDay()] + ' ' + dateStr;
 }
-function fmtDateInputValue(d) {
-  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+/* ================= Calendario propio de Ventas ================= */
+const MESES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+const CAL_DOW = ['Lu', 'Ma', 'Mi', 'Ju', 'Vi', 'Sá', 'Do'];
+let calMonth = null; // Date (día 1 del mes que muestra el calendario)
+function openVentasCal() {
+  const base = ventasDay || startOfDay(new Date());
+  calMonth = new Date(base.getFullYear(), base.getMonth(), 1);
+  renderVentasCal();
+  showOv('ovCalVentas');
 }
-function syncVentasDateInput() {
-  const inp = document.getElementById('inpVentasFecha');
-  if (!inp) return;
+function renderVentasCal() {
+  const title = document.getElementById('calVentasTitle');
+  const grid = document.getElementById('calVentasGrid');
+  if (!title || !grid) return;
+  const y = calMonth.getFullYear(), m = calMonth.getMonth();
+  title.textContent = MESES[m] + ' ' + y;
   const today = startOfDay(new Date());
-  inp.max = fmtDateInputValue(today);
-  inp.value = fmtDateInputValue(ventasDay || today);
+  const selKey = ventasDay ? (ventasDay.getFullYear() + '-' + ventasDay.getMonth() + '-' + ventasDay.getDate()) : null;
+  const salesDays = new Set(sales.map(v => dayKeyOf(v.datetime)));
+  const first = new Date(y, m, 1);
+  const offset = (first.getDay() + 6) % 7; // lunes = 0
+  const daysInMonth = new Date(y, m + 1, 0).getDate();
+  let html = CAL_DOW.map(d => '<div class="cal-dow">' + d + '</div>').join('');
+  for (let i = 0; i < offset; i++) html += '<div class="cal-empty"></div>';
+  for (let d = 1; d <= daysInMonth; d++) {
+    const date = new Date(y, m, d);
+    const key = y + '-' + m + '-' + d;
+    const isFuture = date.getTime() > today.getTime();
+    const isToday = date.getTime() === today.getTime();
+    const isSel = key === selKey;
+    const hasSales = salesDays.has(key);
+    let cls = 'cal-day';
+    if (isFuture) cls += ' disabled';
+    if (isToday) cls += ' today';
+    if (isSel) cls += ' selected';
+    if (hasSales) cls += ' has-sales';
+    html += '<button type="button" class="' + cls + '"' + (isFuture ? ' disabled' : '') + ' data-day="' + d + '">' + d + '</button>';
+  }
+  grid.innerHTML = html;
+  grid.querySelectorAll('.cal-day:not(.disabled)').forEach(b => {
+    b.addEventListener('click', () => {
+      const d = Number(b.dataset.day);
+      ventasDay = startOfDay(new Date(y, m, d));
+      hideOv('ovCalVentas');
+      renderVentas();
+    });
+  });
+  const btnNext = document.getElementById('btnCalNext');
+  if (btnNext) {
+    const nextMonth = new Date(y, m + 1, 1);
+    const curMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+    btnNext.disabled = nextMonth.getTime() > curMonth.getTime();
+  }
 }
+document.getElementById('ventasDayLabel').addEventListener('click', openVentasCal);
+document.getElementById('btnCalPrev').addEventListener('click', () => {
+  calMonth = new Date(calMonth.getFullYear(), calMonth.getMonth() - 1, 1);
+  renderVentasCal();
+});
+document.getElementById('btnCalNext').addEventListener('click', () => {
+  calMonth = new Date(calMonth.getFullYear(), calMonth.getMonth() + 1, 1);
+  renderVentasCal();
+});
 
 /* ================= Ventas (pantalla) ================= */
 function renderVentas() {
@@ -1654,7 +1740,6 @@ function renderVentas() {
   if (countEl) countEl.textContent = String(daySales.length);
   const labelEl = document.getElementById('ventasDayLabel');
   if (labelEl) labelEl.textContent = fmtDayLabel(ventasDay);
-  syncVentasDateInput();
   const btnNext = document.getElementById('btnVentasNext');
   if (btnNext) btnNext.disabled = isToday;
   if (!daySales.length) {
@@ -1696,17 +1781,6 @@ document.getElementById('btnVentasNext').addEventListener('click', () => {
   d.setDate(d.getDate() + 1);
   if (startOfDay(d).getTime() > today.getTime()) return;
   ventasDay = startOfDay(d);
-  renderVentas();
-});
-document.getElementById('inpVentasFecha').addEventListener('change', () => {
-  const inp = document.getElementById('inpVentasFecha');
-  if (!inp || !inp.value) return;
-  const parts = inp.value.split('-').map(Number);
-  if (parts.length !== 3 || parts.some(isNaN)) return;
-  const d = startOfDay(new Date(parts[0], parts[1] - 1, parts[2]));
-  const today = startOfDay(new Date());
-  if (d.getTime() > today.getTime()) { syncVentasDateInput(); return; }
-  ventasDay = d;
   renderVentas();
 });
 document.getElementById('btnLimpiarVentas').addEventListener('click', () => {
