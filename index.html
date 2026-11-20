@@ -1,0 +1,721 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Punto de Venta — Taquería</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #14181f;
+    --panel: #1d232e;
+    --panel2: #252d3a;
+    --border: #2f3947;
+    --text: #eef1f5;
+    --muted: #9aa7b8;
+    --accent: #22c55e;
+    --accent-d: #16a34a;
+    --danger: #ef4444;
+    --warn: #f59e0b;
+    --radius: 14px;
+  }
+  html, body { height: 100%; }
+  body {
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+  }
+
+  /* ---------- Top bar ---------- */
+  header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    background: var(--panel);
+    border-bottom: 1px solid var(--border);
+    flex-wrap: wrap;
+  }
+  header .brand { font-size: 20px; font-weight: 800; letter-spacing: .3px; }
+  header .brand span { color: var(--accent); }
+  header .clock { color: var(--muted); font-size: 15px; font-variant-numeric: tabular-nums; }
+  header .spacer { flex: 1; }
+  .hbtn {
+    border: 1px solid var(--border);
+    background: var(--panel2);
+    color: var(--text);
+    font-size: 15px;
+    font-weight: 600;
+    padding: 10px 16px;
+    border-radius: 10px;
+    cursor: pointer;
+    min-height: 44px;
+  }
+  .hbtn:hover { background: #2d3748; }
+  .hbtn.open { border-color: var(--accent); color: var(--accent); }
+
+  /* ---------- Layout ---------- */
+  main {
+    flex: 1;
+    display: flex;
+    gap: 14px;
+    padding: 14px;
+    align-items: stretch;
+  }
+  .left { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+  .tabs { display: flex; gap: 10px; margin-bottom: 12px; }
+  .tab {
+    flex: 1;
+    padding: 14px 10px;
+    font-size: 19px;
+    font-weight: 800;
+    text-align: center;
+    border-radius: var(--radius);
+    border: 2px solid var(--border);
+    background: var(--panel);
+    color: var(--muted);
+    cursor: pointer;
+    min-height: 56px;
+  }
+  .tab.active { background: var(--accent); border-color: var(--accent); color: #06130a; }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 12px;
+  }
+  .tile {
+    border: none;
+    border-radius: var(--radius);
+    padding: 18px 12px 14px;
+    min-height: 118px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: space-between;
+    cursor: pointer;
+    color: #fff;
+    text-shadow: 0 1px 3px rgba(0,0,0,.45);
+    box-shadow: 0 3px 10px rgba(0,0,0,.35);
+    transition: transform .06s ease;
+    text-align: left;
+  }
+  .tile:active { transform: scale(.96); }
+  .tile .price { font-size: 22px; font-weight: 800; }
+  .tile .name { font-size: 17px; font-weight: 700; line-height: 1.15; }
+  .tile .qty-badge {
+    align-self: flex-end;
+    background: rgba(0,0,0,.45);
+    border-radius: 999px;
+    padding: 2px 10px;
+    font-size: 14px;
+    font-weight: 800;
+    display: none;
+  }
+  .tile .qty-badge.show { display: inline-block; }
+
+  /* ---------- Ticket ---------- */
+  .ticket {
+    width: 360px;
+    flex-shrink: 0;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .ticket h2 { padding: 14px 16px 8px; font-size: 18px; }
+  .ticket-items { flex: 1; overflow-y: auto; padding: 0 12px; min-height: 120px; }
+  .titem {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 4px;
+    border-bottom: 1px solid var(--border);
+  }
+  .titem .tname { flex: 1; min-width: 0; }
+  .titem .tname b { display: block; font-size: 15px; }
+  .titem .tname small { color: var(--muted); font-size: 12px; }
+  .qbtn {
+    width: 36px; height: 36px;
+    border-radius: 9px;
+    border: 1px solid var(--border);
+    background: var(--panel2);
+    color: var(--text);
+    font-size: 19px; font-weight: 800;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+  .qbtn:active { background: #2d3748; }
+  .titem .tqty { min-width: 26px; text-align: center; font-weight: 800; font-size: 16px; }
+  .titem .tsub { min-width: 84px; text-align: right; font-weight: 700; font-size: 15px; }
+  .titem .rm {
+    width: 30px; height: 30px;
+    border: none; background: none;
+    color: var(--danger); font-size: 18px; font-weight: 800;
+    cursor: pointer; flex-shrink: 0;
+  }
+  .empty-ticket { color: var(--muted); text-align: center; padding: 34px 12px; font-size: 15px; }
+  .ticket-foot { padding: 12px 16px 16px; border-top: 1px solid var(--border); }
+  .total-row { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 12px; }
+  .total-row .lbl { color: var(--muted); font-size: 16px; font-weight: 700; }
+  .total-row .val { font-size: 34px; font-weight: 900; font-variant-numeric: tabular-nums; }
+  .ticket-btns { display: flex; gap: 10px; }
+  .btn-clear {
+    padding: 14px 16px;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    background: var(--panel2);
+    color: var(--muted);
+    font-size: 16px; font-weight: 700;
+    cursor: pointer;
+  }
+  .btn-pay {
+    flex: 1;
+    padding: 14px 16px;
+    border-radius: 12px;
+    border: none;
+    background: var(--accent);
+    color: #06130a;
+    font-size: 20px; font-weight: 900;
+    cursor: pointer;
+    min-height: 56px;
+  }
+  .btn-pay:disabled { background: #3a4453; color: #7c8798; cursor: not-allowed; }
+
+  /* ---------- Modals ---------- */
+  .overlay {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,.65);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    z-index: 50;
+  }
+  .overlay.show { display: flex; }
+  .modal {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    width: 100%;
+    max-width: 480px;
+    max-height: 90vh;
+    overflow-y: auto;
+    padding: 22px;
+  }
+  .modal h3 { font-size: 21px; margin-bottom: 14px; }
+  .modal .big-total { font-size: 38px; font-weight: 900; margin: 6px 0 14px; font-variant-numeric: tabular-nums; }
+  .field label { display: block; color: var(--muted); font-weight: 700; font-size: 14px; margin-bottom: 6px; }
+  .field input {
+    width: 100%;
+    font-size: 26px;
+    font-weight: 800;
+    padding: 12px 14px;
+    border-radius: 12px;
+    border: 2px solid var(--border);
+    background: var(--panel2);
+    color: var(--text);
+    font-variant-numeric: tabular-nums;
+  }
+  .field input:focus { outline: none; border-color: var(--accent); }
+  .quick { display: flex; gap: 8px; flex-wrap: wrap; margin: 10px 0; }
+  .qchip {
+    border: 1px solid var(--border);
+    background: var(--panel2);
+    color: var(--text);
+    font-size: 15px; font-weight: 700;
+    padding: 9px 14px;
+    border-radius: 999px;
+    cursor: pointer;
+  }
+  .qchip:active { background: #2d3748; }
+  .change-row {
+    display: flex; justify-content: space-between; align-items: baseline;
+    margin: 14px 0; padding: 12px 14px;
+    background: var(--panel2); border-radius: 12px;
+  }
+  .change-row .lbl { color: var(--muted); font-weight: 700; }
+  .change-row .val { font-size: 28px; font-weight: 900; font-variant-numeric: tabular-nums; }
+  .change-row.bad .val { color: var(--danger); }
+  .modal-btns { display: flex; gap: 10px; margin-top: 16px; }
+  .btn-cancel {
+    padding: 14px 18px; border-radius: 12px;
+    border: 1px solid var(--border); background: var(--panel2);
+    color: var(--muted); font-size: 16px; font-weight: 700; cursor: pointer;
+  }
+  .btn-ok {
+    flex: 1; padding: 14px 18px; border-radius: 12px; border: none;
+    background: var(--accent); color: #06130a;
+    font-size: 18px; font-weight: 900; cursor: pointer; min-height: 54px;
+  }
+  .btn-ok:disabled { background: #3a4453; color: #7c8798; cursor: not-allowed; }
+  .btn-danger {
+    padding: 14px 18px; border-radius: 12px; border: none;
+    background: var(--danger); color: #fff;
+    font-size: 16px; font-weight: 800; cursor: pointer;
+  }
+  .summary-row { display: flex; justify-content: space-between; padding: 9px 0; border-bottom: 1px solid var(--border); font-size: 16px; }
+  .summary-row b { font-variant-numeric: tabular-nums; }
+  .summary-row.total { font-size: 19px; font-weight: 900; border-bottom: none; }
+  .sale-item { padding: 10px 0; border-bottom: 1px solid var(--border); font-size: 14px; }
+  .sale-item .st { color: var(--muted); font-size: 12px; }
+  .sale-item .sa { float: right; font-weight: 800; }
+  .note { color: var(--muted); font-size: 14px; margin-top: 10px; line-height: 1.45; }
+  .toast {
+    position: fixed; left: 50%; bottom: 26px; transform: translateX(-50%);
+    background: #fff; color: #14181f;
+    font-weight: 800; font-size: 16px;
+    padding: 13px 22px; border-radius: 999px;
+    box-shadow: 0 6px 24px rgba(0,0,0,.5);
+    display: none; z-index: 99;
+  }
+  .toast.show { display: block; }
+
+  @media (max-width: 900px) {
+    main { flex-direction: column; }
+    .ticket { width: 100%; }
+    .grid { grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand">Punto de Venta <span>— Taquería</span></div>
+  <div class="clock" id="clock"></div>
+  <div class="spacer"></div>
+  <button class="hbtn" id="btnHistorial">Historial</button>
+  <button class="hbtn" id="btnApertura">Apertura de caja</button>
+  <button class="hbtn" id="btnCorte">Corte de caja</button>
+</header>
+
+<main>
+  <section class="left">
+    <div class="tabs" id="tabs"></div>
+    <div class="grid" id="grid"></div>
+  </section>
+
+  <aside class="ticket">
+    <h2>Ticket</h2>
+    <div class="ticket-items" id="ticketItems"></div>
+    <div class="ticket-foot">
+      <div class="total-row">
+        <span class="lbl">Total</span>
+        <span class="val" id="totalVal">$0.00</span>
+      </div>
+      <div class="ticket-btns">
+        <button class="btn-clear" id="btnVaciar">Vaciar</button>
+        <button class="btn-pay" id="btnCobrar" disabled>Cobrar</button>
+      </div>
+    </div>
+  </aside>
+</main>
+
+<!-- Modal Cobrar -->
+<div class="overlay" id="ovCobrar">
+  <div class="modal">
+    <h3>Cobrar</h3>
+    <div class="note">Total a cobrar</div>
+    <div class="big-total" id="cobrarTotal">$0.00</div>
+    <div class="field">
+      <label for="inpRecibido">Recibido</label>
+      <input id="inpRecibido" type="number" inputmode="decimal" min="0" step="0.01" placeholder="0.00">
+    </div>
+    <div class="quick" id="quickChips"></div>
+    <div class="change-row" id="changeRow">
+      <span class="lbl">Cambio</span>
+      <span class="val" id="cambioVal">$0.00</span>
+    </div>
+    <div class="modal-btns">
+      <button class="btn-cancel" data-close="ovCobrar">Cancelar</button>
+      <button class="btn-ok" id="btnConfirmarCobro" disabled>Confirmar cobro</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Apertura -->
+<div class="overlay" id="ovApertura">
+  <div class="modal">
+    <h3>Apertura de caja</h3>
+    <div id="aperturaForm">
+      <div class="field">
+        <label for="inpFondo">Fondo inicial (efectivo en caja)</label>
+        <input id="inpFondo" type="number" inputmode="decimal" min="0" step="0.01" placeholder="0.00">
+      </div>
+      <div class="modal-btns">
+        <button class="btn-cancel" data-close="ovApertura">Cancelar</button>
+        <button class="btn-ok" id="btnIniciarCaja">Iniciar caja</button>
+      </div>
+    </div>
+    <div id="aperturaAbierta" style="display:none">
+      <div class="note">La caja ya está abierta desde <b id="aperturaDesde"></b> con fondo de <b id="aperturaFondoLbl"></b>.</div>
+      <div class="modal-btns">
+        <button class="btn-cancel" data-close="ovApertura">Cerrar</button>
+        <button class="btn-ok" id="btnIrCorte">Ir a corte de caja</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Corte -->
+<div class="overlay" id="ovCorte">
+  <div class="modal">
+    <h3>Corte de caja</h3>
+    <div id="corteBody"></div>
+    <div class="modal-btns">
+      <button class="btn-cancel" data-close="ovCorte">Cerrar</button>
+      <button class="btn-danger" id="btnCerrarCaja" style="display:none">Cerrar caja</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Historial -->
+<div class="overlay" id="ovHistorial">
+  <div class="modal">
+    <h3>Historial de ventas</h3>
+    <div id="historialBody"></div>
+    <div class="modal-btns">
+      <button class="btn-cancel" data-close="ovHistorial">Cerrar</button>
+      <button class="btn-danger" id="btnLimpiarHistorial">Limpiar historial</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ================= Catálogo (edita aquí precios y productos) ================= */
+const CATALOG = [
+  { id: 'tacos', label: 'Tacos', items: [
+    { id: 'suadero',    name: 'Suadero',    price: 130, color: '#b91c1c' },
+    { id: 'cuero',      name: 'Cuero',      price: 130, color: '#9a3412' },
+    { id: 'adobada',    name: 'Adobada',    price: 130, color: '#c2410c' },
+    { id: 'campechano', name: 'Campechano', price: 130, color: '#7c2d12' },
+  ]},
+  { id: 'bebidas', label: 'Bebidas', items: [
+    { id: 'coca',     name: 'Coca Cola',       price: 30, color: '#dc2626' },
+    { id: 'sprite',   name: 'Sprite',          price: 30, color: '#16a34a' },
+    { id: 'fanta',    name: 'Fanta',           price: 30, color: '#ea580c' },
+    { id: 'jamaica',  name: 'Agua de Jamaica', price: 30, color: '#be185d' },
+    { id: 'limon',    name: 'Agua de limón',   price: 30, color: '#65a30d' },
+    { id: 'horchata', name: 'Agua de horchata', price: 30, color: '#b45309' },
+  ]},
+];
+
+/* ================= Estado ================= */
+const LS_SALES   = 'pvtaqueria_sales';
+const LS_SESSION = 'pvtaqueria_session';
+const LS_CORTES  = 'pvtaqueria_cortes';
+const LS_LASTCUT = 'pvtaqueria_lastCorteIndex';
+
+let ticket = {};              // productId -> qty
+let activeCat = CATALOG[0].id;
+let sales = load(LS_SALES, []);
+let session = load(LS_SESSION, null);            // { opening, startISO, salesStartIndex }
+let cortes = load(LS_CORTES, []);                // closed sessions summaries
+let lastCorteIndex = load(LS_LASTCUT, 0);        // sales index since last corte (when no session)
+
+function load(key, fallback) {
+  try { const v = JSON.parse(localStorage.getItem(key)); return v == null ? fallback : v; }
+  catch (e) { return fallback; }
+}
+function save(key, val) { localStorage.setItem(key, JSON.stringify(val)); }
+
+function productById(id) {
+  for (const cat of CATALOG) for (const p of cat.items) if (p.id === id) return p;
+  return null;
+}
+function fmt(n) {
+  return '$' + Number(n).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+function nowISO() { return new Date().toISOString(); }
+function fmtDateTime(iso) {
+  const d = new Date(iso);
+  return d.toLocaleString('es-MX', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+}
+
+/* ================= Reloj ================= */
+function tickClock() {
+  document.getElementById('clock').textContent =
+    new Date().toLocaleString('es-MX', { weekday: 'short', day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit', second: '2-digit' });
+}
+setInterval(tickClock, 1000); tickClock();
+
+/* ================= Toast ================= */
+let toastTimer = null;
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 2200);
+}
+
+/* ================= Modales ================= */
+function showOv(id) { document.getElementById(id).classList.add('show'); }
+function hideOv(id) { document.getElementById(id).classList.remove('show'); }
+document.querySelectorAll('[data-close]').forEach(b =>
+  b.addEventListener('click', () => hideOv(b.dataset.close)));
+document.querySelectorAll('.overlay').forEach(ov =>
+  ov.addEventListener('click', e => { if (e.target === ov) ov.classList.remove('show'); }));
+
+/* ================= Catálogo / grid ================= */
+function renderTabs() {
+  const tabs = document.getElementById('tabs');
+  tabs.innerHTML = '';
+  CATALOG.forEach(cat => {
+    const b = document.createElement('button');
+    b.className = 'tab' + (cat.id === activeCat ? ' active' : '');
+    b.textContent = cat.label;
+    b.addEventListener('click', () => { activeCat = cat.id; renderTabs(); renderGrid(); });
+    tabs.appendChild(b);
+  });
+}
+function renderGrid() {
+  const grid = document.getElementById('grid');
+  grid.innerHTML = '';
+  const cat = CATALOG.find(c => c.id === activeCat);
+  cat.items.forEach(p => {
+    const b = document.createElement('button');
+    b.className = 'tile';
+    b.style.background = p.color;
+    const qty = ticket[p.id] || 0;
+    b.innerHTML = '<span class="price">' + fmt(p.price) + '</span>' +
+                  '<span class="name">' + p.name + '</span>' +
+                  '<span class="qty-badge' + (qty > 0 ? ' show' : '') + '">x' + qty + '</span>';
+    b.addEventListener('click', () => addToTicket(p.id));
+    grid.appendChild(b);
+  });
+}
+
+/* ================= Ticket ================= */
+function ticketTotal() {
+  let total = 0;
+  for (const id in ticket) {
+    const p = productById(id);
+    if (p) total += p.price * ticket[id];
+  }
+  return total;
+}
+function renderTicket() {
+  const box = document.getElementById('ticketItems');
+  const ids = Object.keys(ticket).filter(id => ticket[id] > 0);
+  if (!ids.length) {
+    box.innerHTML = '<div class="empty-ticket">Toca un producto para agregarlo al ticket.</div>';
+  } else {
+    box.innerHTML = '';
+    ids.forEach(id => {
+      const p = productById(id);
+      const row = document.createElement('div');
+      row.className = 'titem';
+      row.innerHTML =
+        '<div class="tname"><b>' + p.name + '</b><small>' + fmt(p.price) + ' c/u</small></div>' +
+        '<button class="qbtn" data-act="dec">−</button>' +
+        '<span class="tqty">' + ticket[id] + '</span>' +
+        '<button class="qbtn" data-act="inc">+</button>' +
+        '<span class="tsub">' + fmt(p.price * ticket[id]) + '</span>' +
+        '<button class="rm" data-act="rm">×</button>';
+      row.querySelector('[data-act="dec"]').addEventListener('click', () => changeQty(id, -1));
+      row.querySelector('[data-act="inc"]').addEventListener('click', () => changeQty(id, 1));
+      row.querySelector('[data-act="rm"]').addEventListener('click', () => { delete ticket[id]; refreshAll(); });
+      box.appendChild(row);
+    });
+  }
+  const total = ticketTotal();
+  document.getElementById('totalVal').textContent = fmt(total);
+  document.getElementById('btnCobrar').disabled = total <= 0;
+}
+function refreshAll() { renderGrid(); renderTicket(); }
+function addToTicket(id) { ticket[id] = (ticket[id] || 0) + 1; refreshAll(); }
+function changeQty(id, delta) {
+  ticket[id] = (ticket[id] || 0) + delta;
+  if (ticket[id] <= 0) delete ticket[id];
+  refreshAll();
+}
+document.getElementById('btnVaciar').addEventListener('click', () => {
+  if (!Object.keys(ticket).length) return;
+  ticket = {}; refreshAll();
+});
+
+/* ================= Cobrar ================= */
+const inpRecibido = document.getElementById('inpRecibido');
+function openCobrar() {
+  const total = ticketTotal();
+  if (total <= 0) return;
+  document.getElementById('cobrarTotal').textContent = fmt(total);
+  inpRecibido.value = '';
+  renderQuickChips(total);
+  updateCambio();
+  showOv('ovCobrar');
+  setTimeout(() => inpRecibido.focus(), 60);
+}
+function renderQuickChips(total) {
+  const box = document.getElementById('quickChips');
+  box.innerHTML = '';
+  const opts = [];
+  opts.push({ label: 'Exacto', val: total });
+  const rounds = [50, 100, 200, 500, 1000];
+  rounds.forEach(r => { if (r > total) opts.push({ label: fmt(r), val: r }); });
+  opts.forEach(o => {
+    const b = document.createElement('button');
+    b.className = 'qchip';
+    b.textContent = o.label;
+    b.addEventListener('click', () => { inpRecibido.value = o.val.toFixed(2); updateCambio(); });
+    box.appendChild(b);
+  });
+}
+function updateCambio() {
+  const total = ticketTotal();
+  const rec = parseFloat(inpRecibido.value) || 0;
+  const cambio = rec - total;
+  const row = document.getElementById('changeRow');
+  document.getElementById('cambioVal').textContent = fmt(Math.abs(cambio));
+  row.classList.toggle('bad', cambio < 0);
+  document.getElementById('btnConfirmarCobro').disabled = rec < total;
+}
+inpRecibido.addEventListener('input', updateCambio);
+
+document.getElementById('btnCobrar').addEventListener('click', openCobrar);
+document.getElementById('btnConfirmarCobro').addEventListener('click', () => {
+  const total = ticketTotal();
+  const rec = parseFloat(inpRecibido.value) || 0;
+  if (rec < total) return;
+  const items = Object.keys(ticket).filter(id => ticket[id] > 0).map(id => {
+    const p = productById(id);
+    return { id: p.id, name: p.name, price: p.price, qty: ticket[id], subtotal: p.price * ticket[id] };
+  });
+  sales.push({
+    id: Date.now(),
+    datetime: nowISO(),
+    items: items,
+    total: total,
+    received: rec,
+    change: rec - total,
+    sessionOpen: !!session
+  });
+  save(LS_SALES, sales);
+  ticket = {}; refreshAll();
+  hideOv('ovCobrar');
+  toast('Venta registrada. Cambio: ' + fmt(rec - total));
+});
+
+/* ================= Apertura / Corte ================= */
+function refreshSessionBtns() {
+  const b = document.getElementById('btnApertura');
+  b.classList.toggle('open', !!session);
+  b.textContent = session ? 'Caja abierta' : 'Apertura de caja';
+}
+document.getElementById('btnApertura').addEventListener('click', () => {
+  if (session) {
+    document.getElementById('aperturaForm').style.display = 'none';
+    document.getElementById('aperturaAbierta').style.display = 'block';
+    document.getElementById('aperturaDesde').textContent = fmtDateTime(session.startISO);
+    document.getElementById('aperturaFondoLbl').textContent = fmt(session.opening);
+  } else {
+    document.getElementById('aperturaForm').style.display = 'block';
+    document.getElementById('aperturaAbierta').style.display = 'none';
+    document.getElementById('inpFondo').value = '';
+  }
+  showOv('ovApertura');
+});
+document.getElementById('btnIniciarCaja').addEventListener('click', () => {
+  const fondo = parseFloat(document.getElementById('inpFondo').value) || 0;
+  session = { opening: fondo, startISO: nowISO(), salesStartIndex: sales.length };
+  save(LS_SESSION, session);
+  refreshSessionBtns();
+  hideOv('ovApertura');
+  toast('Caja abierta con fondo de ' + fmt(fondo));
+});
+document.getElementById('btnIrCorte').addEventListener('click', () => {
+  hideOv('ovApertura'); openCorte();
+});
+
+function sessionSales() {
+  if (session) return sales.slice(session.salesStartIndex);
+  return sales.slice(lastCorteIndex);
+}
+function openCorte() {
+  const list = sessionSales();
+  const totalSold = list.reduce((s, v) => s + v.total, 0);
+  const opening = session ? session.opening : 0;
+  const body = document.getElementById('corteBody');
+  let html = '';
+  html += '<div class="summary-row"><span>Fondo inicial</span><b>' + fmt(opening) + '</b></div>';
+  html += '<div class="summary-row"><span>Ventas</span><b>' + list.length + '</b></div>';
+  html += '<div class="summary-row"><span>Total vendido</span><b>' + fmt(totalSold) + '</b></div>';
+  html += '<div class="summary-row total"><span>Efectivo esperado</span><b>' + fmt(opening + totalSold) + '</b></div>';
+  if (!session) html += '<div class="note">Sin caja abierta: se resumen las ventas desde el último corte.</div>';
+  if (list.length) {
+    html += '<h3 style="font-size:16px;margin:16px 0 6px">Ventas del periodo</h3>';
+    list.forEach(v => {
+      const itemsTxt = v.items.map(i => i.qty + '× ' + i.name).join(', ');
+      html += '<div class="sale-item"><span class="sa">' + fmt(v.total) + '</span>' +
+              '<span class="st">' + fmtDateTime(v.datetime) + '</span><br>' + itemsTxt + '</div>';
+    });
+  } else {
+    html += '<div class="note">No hay ventas en este periodo.</div>';
+  }
+  body.innerHTML = html;
+  document.getElementById('btnCerrarCaja').style.display = (list.length || session) ? 'block' : 'none';
+  showOv('ovCorte');
+}
+document.getElementById('btnCorte').addEventListener('click', openCorte);
+document.getElementById('btnCerrarCaja').addEventListener('click', () => {
+  const list = sessionSales();
+  const totalSold = list.reduce((s, v) => s + v.total, 0);
+  cortes.push({
+    closedAt: nowISO(),
+    opening: session ? session.opening : 0,
+    startISO: session ? session.startISO : (list.length ? list[0].datetime : null),
+    salesCount: list.length,
+    totalSold: totalSold,
+    expectedCash: (session ? session.opening : 0) + totalSold
+  });
+  save(LS_CORTES, cortes);
+  lastCorteIndex = sales.length;
+  save(LS_LASTCUT, lastCorteIndex);
+  session = null;
+  save(LS_SESSION, null);
+  refreshSessionBtns();
+  hideOv('ovCorte');
+  toast('Corte de caja registrado: ' + fmt(totalSold) + ' vendidos');
+});
+
+/* ================= Historial ================= */
+document.getElementById('btnHistorial').addEventListener('click', () => {
+  const body = document.getElementById('historialBody');
+  if (!sales.length) {
+    body.innerHTML = '<div class="note">Todavía no hay ventas registradas.</div>';
+  } else {
+    let html = '';
+    [...sales].reverse().forEach(v => {
+      const itemsTxt = v.items.map(i => i.qty + '× ' + i.name).join(', ');
+      html += '<div class="sale-item"><span class="sa">' + fmt(v.total) + '</span>' +
+              '<span class="st">' + fmtDateTime(v.datetime) + (v.sessionOpen ? '' : ' · sin sesión') + '</span><br>' +
+              itemsTxt + '<br><span class="st">Recibido ' + fmt(v.received) + ' · Cambio ' + fmt(v.change) + '</span></div>';
+    });
+    body.innerHTML = html;
+  }
+  showOv('ovHistorial');
+});
+document.getElementById('btnLimpiarHistorial').addEventListener('click', () => {
+  if (!sales.length) return;
+  if (!confirm('¿Borrar todo el historial de ventas? Esta acción no se puede deshacer.')) return;
+  sales = [];
+  save(LS_SALES, sales);
+  document.getElementById('historialBody').innerHTML = '<div class="note">Historial borrado.</div>';
+  toast('Historial borrado');
+});
+
+/* ================= Init ================= */
+renderTabs();
+renderGrid();
+renderTicket();
+refreshSessionBtns();
+</script>
+</body>
+</html>
