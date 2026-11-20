@@ -423,6 +423,7 @@
   .home-card.primary { background: #a5d6a7; }
   .home-card.alt { background: #a5d6a7; }
   .home-card.alt2 { background: #a5d6a7; }
+  .home-card:disabled, .home-card.disabled { opacity: .45; cursor: not-allowed; pointer-events: none; box-shadow: none; }
   .hc-icon {
     width: 52px; height: 52px; border-radius: 15px;
     background: rgba(27,58,23,.14);
@@ -1461,6 +1462,11 @@ function refreshSessionBtns() {
     btn.disabled = !session;
     btn.classList.toggle('disabled', !session);
   });
+  ['btnHomePos', 'btnHomeComandas'].forEach(id => {
+    const btn = document.getElementById(id);
+    btn.disabled = !session;
+    btn.classList.toggle('disabled', !session);
+  });
 }
 document.getElementById('btnApertura').addEventListener('click', () => {
   if (session) {
@@ -1656,8 +1662,8 @@ function showScreen(id, fromHash) {
   }
 }
 window.addEventListener('hashchange', () => { showScreen(screenFromHash(), true); });
-document.getElementById('btnHomePos').addEventListener('click', () => showScreen('screenPos'));
-document.getElementById('btnHomeComandas').addEventListener('click', () => showScreen('screenComandas'));
+document.getElementById('btnHomePos').addEventListener('click', () => { if (!session) return; showScreen('screenPos'); });
+document.getElementById('btnHomeComandas').addEventListener('click', () => { if (!session) return; showScreen('screenComandas'); });
 document.getElementById('btnHomeConfig').addEventListener('click', () => showScreen('screenConfig'));
 document.getElementById('btnHomeVentas').addEventListener('click', () => showScreen('screenVentas'));
 document.getElementById('btnBackPos').addEventListener('click', () => showScreen('screenHome'));
