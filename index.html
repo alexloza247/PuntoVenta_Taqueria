@@ -693,6 +693,7 @@
   .btn-print-test {
     width: 50%;
     margin-left: auto;
+    margin-right: auto;
     display: block;
     padding: 10px 14px;
     border-radius: 12px; border: none;
@@ -702,12 +703,15 @@
   }
   .btn-print-test:disabled { opacity: .45; cursor: not-allowed; }
   .btn-conectar-impresora {
-    width: 100%;
-    padding: 14px;
+    width: 50%;
+    margin-left: auto;
+    margin-right: auto;
+    display: block;
+    padding: 10px 14px;
     border-radius: 12px; border: none;
     background: var(--accent); color: #fff;
-    font-size: 16px; font-weight: 900;
-    cursor: pointer; min-height: 52px;
+    font-size: 15px; font-weight: 900;
+    cursor: pointer; min-height: 44px;
     margin-bottom: 10px;
   }
   .printer-status { font-size: 14px; font-weight: 700; color: var(--accent); margin: 0 0 10px; }
@@ -733,6 +737,7 @@
   .btn-save-config {
     width: 50%;
     margin-left: auto;
+    margin-right: auto;
     display: block;
     padding: 10px 14px;
     border-radius: 12px; border: none;
@@ -1825,7 +1830,7 @@ function renderDevices() {
       printerStatus.textContent = msg;
       printerStatus.classList.toggle('printer-fallback', !!isFallback);
     } else if (hasPrinter) {
-      printerStatus.textContent = (printerSettings.fuente === 'bluetooth' ? 'Impresora conectada: ' : 'Impresora: ') + printerSettings.nombre;
+      printerStatus.textContent = ((printerSettings.fuente === 'bluetooth' || printerSettings.fuente === 'usb') ? 'Impresora conectada: ' : 'Impresora: ') + printerSettings.nombre;
       printerStatus.classList.remove('printer-fallback');
     } else {
       printerStatus.textContent = '';
@@ -1833,30 +1838,56 @@ function renderDevices() {
     }
   }
 
+  function applyPrinterName(name, fuente) {
+    printerSettings.nombre = name;
+    printerSettings.fuente = fuente;
+    savePrinter();
+    inpNombre.value = name;
+    refreshPrinterControls();
+  }
+
+  async function autoDetectPrinter() {
+    try {
+      const bt = navigator.bluetooth;
+      if (!bt || typeof bt.getDevices !== 'function') return;
+      const devs = await bt.getDevices();
+      const dev = (devs || []).find(d => d && d.name && String(d.name).trim());
+      if (!dev) return;
+      const name = String(dev.name).trim();
+      if (printerSettings.nombre === name && printerSettings.fuente === 'bluetooth') return;
+      applyPrinterName(name, 'bluetooth');
+    } catch (e) { /* silencioso: sin impresora previa o sin permiso */ }
+  }
+
   async function connectPrinter() {
-    if (!navigator.bluetooth || typeof navigator.bluetooth.requestDevice !== 'function') {
-      refreshPrinterControls('Tu navegador no permite detectar la impresora automáticamente; escribe el nombre manualmente.', true);
+    const bt = navigator.bluetooth;
+    if (bt && typeof bt.requestDevice === 'function') {
+      try {
+        const device = await bt.requestDevice({
+          acceptAllDevices: true,
+          optionalServices: ['battery_service', 'device_information', 'generic_access', 'generic_attribute', 'serial_port']
+        });
+        const name = device && device.name ? String(device.name).trim() : '';
+        if (!name) return; // sin nombre: conservar valor anterior, sin mensaje
+        applyPrinterName(name, 'bluetooth');
+      } catch (e) {
+        return; // cancelación / permiso denegado / no encontrado: conservar valor, sin mensaje
+      }
       return;
     }
-    try {
-      const device = await navigator.bluetooth.requestDevice({
-        acceptAllDevices: true,
-        optionalServices: ['battery_service', 'device_information', 'generic_access', 'generic_attribute', 'serial_port']
-      });
-      const name = device && device.name ? String(device.name).trim() : '';
-      if (!name) {
-        refreshPrinterControls('La impresora no envió su nombre; escríbelo manualmente.', true);
-        return;
+    const usb = navigator.usb;
+    if (usb && typeof usb.requestDevice === 'function') {
+      try {
+        const device = await usb.requestDevice({ filters: [] });
+        const name = device && (device.productName || device.manufacturerName) ? String(device.productName || device.manufacturerName).trim() : '';
+        if (!name) return; // sin nombre: conservar valor anterior, sin mensaje
+        applyPrinterName(name, 'usb');
+      } catch (e) {
+        return; // cancelación / permiso denegado: conservar valor, sin mensaje
       }
-      printerSettings.nombre = name;
-      printerSettings.fuente = 'bluetooth';
-      savePrinter();
-      inpNombre.value = name;
-      refreshPrinterControls();
-    } catch (e) {
-      if (e && e.name === 'NotFoundError') return; // usuario canceló: conservar valor anterior
-      refreshPrinterControls('No se pudo conectar la impresora; escribe el nombre manualmente.', true);
+      return;
     }
+    refreshPrinterControls('Tu navegador no permite detectar la impresora automáticamente. Usa Chrome o Edge, o escribe el nombre manualmente abajo.', true);
   }
 
   btnConectar.addEventListener('click', connectPrinter);
@@ -1867,6 +1898,7 @@ function renderDevices() {
     refreshPrinterControls();
   });
   refreshPrinterControls();
+  autoDetectPrinter();
 
   body.appendChild(secP);
 
