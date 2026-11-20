@@ -326,35 +326,39 @@
   /* ---------- Pantalla de inicio ---------- */
   #screenHome { overflow-y: auto; }
   .home-wrap {
-    width: 100%; max-width: 680px; margin: auto;
-    padding: 32px 18px 28px;
-    display: flex; flex-direction: column; gap: 22px;
+    width: 100%; max-width: 680px; margin: 0 auto;
+    padding: 18px 18px 28px;
+    display: flex; flex-direction: column; gap: 14px;
   }
-  .home-head {
-    display: flex; flex-direction: column; align-items: center; gap: 12px;
-    text-align: center;
+  .home-header {
+    display: flex; align-items: center; gap: 14px;
+    padding: 16px 20px;
+    background: linear-gradient(135deg, #1b3a17 0%, #2e7d46 100%);
+    color: #fff;
+    box-shadow: 0 6px 18px rgba(35,70,30,.22);
   }
+  .home-header-text { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
   .home-logo-tile {
-    width: 96px; height: 96px;
-    background: #fff; border-radius: 26px;
+    width: 64px; height: 64px; flex: 0 0 auto;
+    background: #fff; border-radius: 20px;
     display: flex; align-items: center; justify-content: center;
-    box-shadow: 0 10px 26px rgba(35,70,30,.18);
-    border: 1px solid var(--border);
+    box-shadow: 0 6px 16px rgba(0,0,0,.18);
   }
   .home-logo {
-    width: 72px; height: 72px;
+    width: 50px; height: 50px;
     border-radius: 50%; object-fit: cover;
     background: #fff;
   }
-  .home-title { font-size: 26px; font-weight: 900; color: var(--accent); line-height: 1.2; }
-  .home-title span { color: var(--accent-l); }
+  .home-title { font-size: 23px; font-weight: 900; color: #fff; line-height: 1.15; }
+  .home-title span { color: #c9e7cf; }
   .home-pill {
-    padding: 7px 16px; border-radius: 999px;
-    font-size: 13px; font-weight: 800;
-    background: #e8ece9; color: #6b7a6e;
+    align-self: flex-start;
+    padding: 5px 12px; border-radius: 999px;
+    font-size: 12px; font-weight: 800;
+    background: rgba(255,255,255,.18); color: #fff;
   }
-  .home-pill::before { content: '●'; margin-right: 6px; font-size: 10px; vertical-align: 1px; }
-  .home-pill.open { background: #e2f3e8; color: #1e7a3c; }
+  .home-pill::before { content: '●'; margin-right: 6px; font-size: 9px; vertical-align: 1px; }
+  .home-pill.open { background: rgba(255,255,255,.92); color: #1e7a3c; }
   .home-cards { display: grid; grid-template-columns: 1fr; gap: 14px; }
   .home-card {
     display: flex; align-items: center; gap: 16px;
@@ -540,11 +544,18 @@
 <body>
 
 <section id="screenHome" class="screen">
-  <div class="home-wrap">
-    <div class="home-head">
-      <div class="home-logo-tile"><img class="home-logo" id="homeLogo" alt="Taquería El Vergel"></div>
+  <div class="home-header">
+    <div class="home-logo-tile"><img class="home-logo" id="homeLogo" alt="Taquería El Vergel"></div>
+    <div class="home-header-text">
       <div class="home-title">Taquería <span>"El Vergel"</span></div>
       <div class="home-pill" id="homeCajaState">Caja cerrada</div>
+    </div>
+  </div>
+  <div class="home-wrap">
+    <div class="home-row">
+      <button class="home-mini" id="btnApertura"><span id="btnAperturaLabel">Apertura de caja</span></button>
+      <button class="home-mini" id="btnCorteX">Corte X</button>
+      <button class="home-mini" id="btnCorteZ">Corte Z</button>
     </div>
     <div class="home-cards">
       <button class="home-card primary" id="btnHomePos">
@@ -559,10 +570,6 @@
         <span class="hc-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h10"/><path d="M18 7h2"/><circle cx="16" cy="7" r="2"/><path d="M4 17h4"/><path d="M12 17h8"/><circle cx="10" cy="17" r="2"/></svg></span>
         <span class="hc-text"><span class="hc-title">Configuración</span><span class="hc-sub">Productos y precios</span></span>
       </button>
-    </div>
-    <div class="home-row">
-      <button class="home-mini" id="btnApertura"><span id="btnAperturaLabel">Apertura de caja</span></button>
-      <button class="home-mini" id="btnCorte">Corte de caja</button>
     </div>
   </div>
 </section>
@@ -669,7 +676,7 @@
       <div class="note">La caja ya está abierta desde <b id="aperturaDesde"></b> con fondo de <b id="aperturaFondoLbl"></b>.</div>
       <div class="modal-btns">
         <button class="btn-cancel" data-close="ovApertura">Cerrar</button>
-        <button class="btn-ok" id="btnIrCorte">Ir a corte de caja</button>
+        <button class="btn-ok" id="btnIrCorte">Ir a corte Z</button>
       </div>
     </div>
   </div>
@@ -678,7 +685,7 @@
 <!-- Modal Corte -->
 <div class="overlay" id="ovCorte">
   <div class="modal">
-    <h3>Corte de caja</h3>
+    <h3 id="corteTitle">Corte de caja</h3>
     <div id="corteBody"></div>
     <div class="modal-btns">
       <button class="btn-cancel" data-close="ovCorte">Cerrar</button>
@@ -759,7 +766,9 @@ let comandas = load(LS_COMANDAS, []);
 let comandaSeq = load(LS_COMANDA_SEQ, 0);
 let sales = load(LS_SALES, []);
 let session = load(LS_SESSION, null);            // { opening, startISO, salesStartIndex }
-let cortes = load(LS_CORTES, []);                // closed sessions summaries
+let cortes = load(LS_CORTES, []);                // cortes X (parciales) y Z (cierres)
+if (!Array.isArray(cortes)) cortes = [];
+cortes.forEach(c => { if (c && !c.type) c.type = 'Z'; });   // cortes viejos = Z
 let lastCorteIndex = load(LS_LASTCUT, 0);        // sales index since last corte (when no session)
 
 function load(key, fallback) {
@@ -1046,24 +1055,31 @@ document.getElementById('btnIniciarCaja').addEventListener('click', () => {
   toast('Caja abierta con fondo de ' + fmt(fondo));
 });
 document.getElementById('btnIrCorte').addEventListener('click', () => {
-  hideOv('ovApertura'); openCorte();
+  hideOv('ovApertura'); openCorteZ();
 });
 
 function sessionSales() {
   if (session) return sales.slice(session.salesStartIndex);
   return sales.slice(lastCorteIndex);
 }
-function openCorte() {
-  const list = sessionSales();
+function corteType(c) { return (c && c.type) || 'Z'; }
+function xCortesForCurrentSession() {
+  if (session) {
+    return cortes.filter(c => corteType(c) === 'X' && c.sessionStartISO === session.startISO);
+  }
+  let lastZ = -1;
+  cortes.forEach((c, i) => { if (corteType(c) === 'Z') lastZ = i; });
+  return cortes.slice(lastZ + 1).filter(c => corteType(c) === 'X');
+}
+function buildCorteBody(list, opening, extraHtml) {
   const totalSold = list.reduce((s, v) => s + v.total, 0);
-  const opening = session ? session.opening : 0;
-  const body = document.getElementById('corteBody');
   let html = '';
   html += '<div class="summary-row"><span>Fondo inicial</span><b>' + fmt(opening) + '</b></div>';
   html += '<div class="summary-row"><span>Ventas</span><b>' + list.length + '</b></div>';
   html += '<div class="summary-row"><span>Total vendido</span><b>' + fmt(totalSold) + '</b></div>';
   html += '<div class="summary-row total"><span>Efectivo esperado</span><b>' + fmt(opening + totalSold) + '</b></div>';
   if (!session) html += '<div class="note">Sin caja abierta: se resumen las ventas desde el último corte.</div>';
+  if (extraHtml) html += extraHtml;
   if (list.length) {
     html += '<h3 style="font-size:16px;margin:16px 0 6px">Ventas del periodo</h3>';
     list.forEach(v => {
@@ -1074,15 +1090,51 @@ function openCorte() {
   } else {
     html += '<div class="note">No hay ventas en este periodo.</div>';
   }
-  body.innerHTML = html;
+  return { html: html, totalSold: totalSold };
+}
+function openCorteX() {
+  const list = sessionSales();
+  const opening = session ? session.opening : 0;
+  const r = buildCorteBody(list, opening, '<div class="note">La caja sigue abierta. Puedes seguir vendiendo.</div>');
+  document.getElementById('corteTitle').textContent = 'Corte X';
+  document.getElementById('corteBody').innerHTML = r.html;
+  document.getElementById('btnCerrarCaja').style.display = 'none';
+  cortes.push({
+    type: 'X',
+    datetime: nowISO(),
+    opening: opening,
+    startISO: session ? session.startISO : null,
+    sessionStartISO: session ? session.startISO : null,
+    salesCount: list.length,
+    totalSold: r.totalSold,
+    expectedCash: opening + r.totalSold
+  });
+  save(LS_CORTES, cortes);
+  showOv('ovCorte');
+}
+function openCorteZ() {
+  const list = sessionSales();
+  const opening = session ? session.opening : 0;
+  const xs = xCortesForCurrentSession();
+  let extra = '';
+  if (xs.length) {
+    extra += '<div class="summary-row"><span>Cortes X realizados</span><b>' + xs.length + '</b></div>';
+    extra += '<div class="note">Cortes X: ' + xs.map(c => fmtDateTime(c.datetime || c.closedAt)).join(' · ') + '</div>';
+  }
+  const r = buildCorteBody(list, opening, extra);
+  document.getElementById('corteTitle').textContent = 'Corte Z';
+  document.getElementById('corteBody').innerHTML = r.html;
   document.getElementById('btnCerrarCaja').style.display = (list.length || session) ? 'block' : 'none';
   showOv('ovCorte');
 }
-document.getElementById('btnCorte').addEventListener('click', openCorte);
+function openCorte() { openCorteZ(); }
+document.getElementById('btnCorteX').addEventListener('click', openCorteX);
+document.getElementById('btnCorteZ').addEventListener('click', openCorteZ);
 document.getElementById('btnCerrarCaja').addEventListener('click', () => {
   const list = sessionSales();
   const totalSold = list.reduce((s, v) => s + v.total, 0);
   cortes.push({
+    type: 'Z',
     closedAt: nowISO(),
     opening: session ? session.opening : 0,
     startISO: session ? session.startISO : (list.length ? list[0].datetime : null),
@@ -1097,7 +1149,7 @@ document.getElementById('btnCerrarCaja').addEventListener('click', () => {
   save(LS_SESSION, null);
   refreshSessionBtns();
   hideOv('ovCorte');
-  toast('Corte de caja registrado: ' + fmt(totalSold) + ' vendidos');
+  toast('Corte Z registrado: ' + fmt(totalSold) + ' vendidos');
 });
 
 /* ================= Historial ================= */
