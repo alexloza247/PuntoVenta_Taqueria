@@ -6,7 +6,7 @@ Punto de venta web para una taquería: toca los productos para armar el ticket, 
 
 1. Abre `index.html` en cualquier navegador (Windows, Android, tablet o celular). No necesita instalación ni internet.
 2. **Apertura de caja:** toca "Apertura de caja", captura el fondo inicial (efectivo con el que empieza la caja) y toca "Iniciar caja".
-3. **Vender:** toca los cuadritos de productos (Tacos / Bebidas) para agregarlos al ticket. En el ticket puedes subir o bajar cantidades con − / +, quitar un producto con ×, o vaciar todo con "Vaciar".
+3. **Vender:** toca los cuadritos de productos (Órdenes / Taco individual / Bebidas) para agregarlos al ticket. En el ticket puedes subir o bajar cantidades con − / +, quitar un producto con ×, o vaciar todo con "Vaciar".
 4. **Cobrar:** toca "Cobrar", captura cuánto te dio el cliente en "Recibido" (o usa los botones rápidos, incluido "Exacto"). El "Cambio" se calcula solo. Toca "Confirmar cobro" para registrar la venta y limpiar el ticket.
 5. **Corte de caja:** toca "Corte de caja" para ver el resumen del periodo: fondo inicial, número de ventas, total vendido, efectivo esperado (fondo + vendido) y la lista de ventas. Toca "Cerrar caja" para cerrar el periodo; después puedes hacer una nueva apertura.
 6. **Historial:** el botón "Historial" muestra todas las ventas registradas (fecha, productos, total, recibido y cambio).
@@ -15,7 +15,8 @@ Punto de venta web para una taquería: toca los productos para armar el ticket, 
 
 El catálogo está fijo en el código (objeto `CATALOG` al inicio del `<script>` en `index.html`), fácil de editar:
 
-- **Tacos** (orden a $130.00): Suadero, Cuero, Adobada, Campechano
+- **Órdenes** (la orden a $130.00): Suadero, Cuero, Adobada, Campechano
+- **Taco individual** ($32.50 c/u): Suadero, Cuero, Adobada, Campechano
 - **Bebidas** ($30.00 c/u): Coca Cola, Sprite, Fanta, Agua de Jamaica, Agua de limón, Agua de horchata
 
 ## Cómo funciona la caja
