@@ -688,6 +688,19 @@
     font-size: 15px; font-weight: 700;
   }
   .printer-field input:focus, .printer-field select:focus { outline: none; border-color: var(--accent); }
+  .printer-name-display {
+    width: 100%;
+    padding: 10px 12px;
+    border: 2px solid var(--border);
+    border-radius: 10px;
+    background: var(--panel2);
+    color: var(--text);
+    font-family: inherit;
+    font-size: 15px; font-weight: 700;
+    min-height: 44px;
+    display: flex; align-items: center;
+  }
+  .printer-name-display.printer-name-empty { color: var(--muted); font-weight: 600; }
   .printer-toggle { display: flex; align-items: center; gap: 10px; font-size: 15px; font-weight: 700; color: var(--text); cursor: pointer; margin-bottom: 14px; }
   .printer-toggle input { width: 22px; height: 22px; accent-color: var(--accent); }
   .btn-print-test {
@@ -1778,11 +1791,15 @@ function renderDevices() {
   const lblNombre = document.createElement('label');
   lblNombre.textContent = 'Nombre de la impresora';
   fNombre.appendChild(lblNombre);
-  const inpNombre = document.createElement('input');
-  inpNombre.type = 'text';
-  inpNombre.placeholder = 'Ej. TM-T20 (opcional)';
-  inpNombre.value = printerSettings.nombre || '';
-  fNombre.appendChild(inpNombre);
+  const nombreDisplay = document.createElement('div');
+  nombreDisplay.className = 'printer-name-display';
+  function renderPrinterNameDisplay() {
+    const n = printerSettings.nombre && String(printerSettings.nombre).trim();
+    nombreDisplay.textContent = n || 'Sin impresora conectada';
+    nombreDisplay.classList.toggle('printer-name-empty', !n);
+  }
+  renderPrinterNameDisplay();
+  fNombre.appendChild(nombreDisplay);
   secP.appendChild(fNombre);
 
   const fAncho = document.createElement('div');
@@ -1829,7 +1846,7 @@ function renderDevices() {
       printerStatus.textContent = msg;
       printerStatus.classList.toggle('printer-fallback', !!isFallback);
     } else if (hasPrinter) {
-      printerStatus.textContent = ((printerSettings.fuente === 'bluetooth' || printerSettings.fuente === 'usb') ? 'Impresora conectada: ' : 'Impresora: ') + printerSettings.nombre;
+      printerStatus.textContent = 'Impresora conectada: ' + printerSettings.nombre;
       printerStatus.classList.remove('printer-fallback');
     } else {
       printerStatus.textContent = '';
@@ -1841,7 +1858,7 @@ function renderDevices() {
     printerSettings.nombre = name;
     printerSettings.fuente = fuente;
     savePrinter();
-    inpNombre.value = name;
+    renderPrinterNameDisplay();
     refreshPrinterControls();
   }
 
@@ -1886,16 +1903,10 @@ function renderDevices() {
       }
       return;
     }
-    refreshPrinterControls('Tu navegador no permite detectar la impresora automáticamente. Usa Chrome o Edge, o escribe el nombre manualmente abajo.', true);
+    refreshPrinterControls('Tu navegador no permite detectar la impresora automáticamente. Usa Chrome o Edge para conectarla.', true);
   }
 
   btnConectar.addEventListener('click', connectPrinter);
-  inpNombre.addEventListener('input', () => {
-    printerSettings.nombre = inpNombre.value;
-    printerSettings.fuente = 'manual';
-    savePrinter();
-    refreshPrinterControls();
-  });
   refreshPrinterControls();
   autoDetectPrinter();
 
