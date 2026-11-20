@@ -624,15 +624,12 @@
   /* ---------- Dispositivos ---------- */
   .dev-section { margin-bottom: 22px; }
   .dev-section h3 { font-size: 16px; color: var(--accent); margin: 0 0 10px; }
+  .dev-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
   .dev-card {
     background: var(--panel);
     border: 1px solid var(--border);
     border-radius: var(--radius);
     padding: 14px;
-    margin-bottom: 12px;
-    max-width: 50%;
-    margin-left: 0;
-    margin-right: auto;
   }
   .dev-card .dev-name {
     width: 100%;
@@ -783,6 +780,7 @@
     .comandas-body { flex-direction: column; overflow-y: auto; }
     .comandas-col { overflow-y: visible; padding: 0; }
     .comandas-col:last-child { border-left: none; border-top: 2px solid var(--border); padding-top: 12px; margin-top: 12px; }
+    .dev-grid { grid-template-columns: 1fr; }
   }
 </style>
 </head>
@@ -1130,6 +1128,8 @@ if (devices === null) {
   save(LS_DEVICES, devices);
 }
 if (!Array.isArray(devices)) devices = [];
+// Si un dispositivo está nulo (sin nombre) se borra automáticamente
+if (pruneDevices(devices) > 0) save(LS_DEVICES, devices);
 
 function load(key, fallback) {
   try { const v = JSON.parse(localStorage.getItem(key)); return v == null ? fallback : v; }
@@ -1824,9 +1824,27 @@ const DEVICE_PERMS = [
   { key: 'configuracion', label: 'Configuración' }
 ];
 function savePrinter() { save(LS_PRINTER, printerSettings); }
-function saveDevices() { save(LS_DEVICES, devices); }
+function isValidDevice(d) {
+  return !!d && String(d.nombre || '').trim().length > 0;
+}
+function pruneDevices(list, exemptId) {
+  if (!Array.isArray(list)) return 0;
+  const before = list.length;
+  for (let i = list.length - 1; i >= 0; i--) {
+    const d = list[i];
+    if (d && exemptId !== undefined && d.id === exemptId) continue;
+    if (!isValidDevice(d)) list.splice(i, 1);
+  }
+  return before - list.length;
+}
+function saveDevices() {
+  pruneDevices(devices);
+  save(LS_DEVICES, devices);
+}
 
-function renderDevices() {
+function renderDevices(exemptId) {
+  // Si un dispositivo está nulo (sin nombre) se borra automáticamente
+  if (pruneDevices(devices, exemptId) > 0) save(LS_DEVICES, devices);
   const body = document.getElementById('devicesBody');
   body.innerHTML = '';
 
@@ -1985,6 +2003,10 @@ function renderDevices() {
   hD.textContent = 'Dispositivos conectados';
   secD.appendChild(hD);
 
+  const grid = document.createElement('div');
+  grid.className = 'dev-grid';
+  secD.appendChild(grid);
+
   devices.forEach(dev => {
     const card = document.createElement('div');
     card.className = 'dev-card';
@@ -2032,16 +2054,19 @@ function renderDevices() {
       renderDevices();
     });
     card.appendChild(btnDel);
-    secD.appendChild(card);
+    grid.appendChild(card);
   });
 
   const btnAdd = document.createElement('button');
   btnAdd.className = 'dev-add';
   btnAdd.textContent = '＋ Agregar dispositivo';
   btnAdd.addEventListener('click', () => {
-    devices.push({ id: 'dev-' + Date.now().toString(36) + '-' + devices.length, nombre: '', tipo: 'Otro', permisos: { pos: false, comandas: false, cobrar: false, cortes: false, ventas: false, configuracion: false } });
-    saveDevices();
-    renderDevices();
+    // Si ya hay un dispositivo vacío, se borra el anterior (nunca más de uno vacío)
+    devices = devices.filter(d => isValidDevice(d));
+    const newDev = { id: 'dev-' + Date.now().toString(36) + '-' + devices.length, nombre: '', tipo: 'Otro', permisos: { pos: false, comandas: false, cobrar: false, cortes: false, ventas: false, configuracion: false } };
+    devices.push(newDev);
+    save(LS_DEVICES, devices);
+    renderDevices(newDev.id);
     const cards = document.querySelectorAll('#devicesBody .dev-card');
     const last = cards.length ? cards[cards.length - 1].querySelector('.dev-name') : null;
     if (last && last.focus) last.focus();
