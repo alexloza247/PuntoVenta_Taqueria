@@ -448,9 +448,54 @@
   .home-mini:disabled, .home-mini.disabled { opacity: .45; cursor: not-allowed; pointer-events: none; }
 
   /* ---------- Pantalla de ventas ---------- */
+  .ventas-wrap { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+  .ventas-summary { display: flex; gap: 12px; padding: 14px 18px 0; }
+  .vs-card {
+    flex: 1; min-width: 0;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px 16px;
+    box-shadow: 0 4px 12px rgba(35,70,30,.08);
+  }
+  .vs-card .vs-label { display: block; font-size: 12px; font-weight: 800; letter-spacing: .5px; text-transform: uppercase; color: var(--muted); }
+  .vs-card .vs-value { display: block; font-size: 24px; font-weight: 900; color: var(--accent); font-variant-numeric: tabular-nums; margin-top: 4px; }
   .ventas-body { flex: 1; min-height: 0; overflow-y: auto; padding: 14px 18px; }
-  .ventas-foot { padding: 12px 14px; border-top: 1px solid var(--border); }
-  .ventas-foot .btn-danger { width: 100%; }
+  .venta-card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px 16px;
+    margin-bottom: 12px;
+    box-shadow: 0 4px 12px rgba(35,70,30,.06);
+  }
+  .venta-card .vc-head { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; margin-bottom: 6px; }
+  .venta-card .vc-total { font-size: 21px; font-weight: 900; color: var(--accent); font-variant-numeric: tabular-nums; }
+  .venta-card .vc-time { color: var(--muted); font-size: 13px; font-weight: 600; white-space: nowrap; }
+  .venta-card .vc-cliente { font-size: 15px; font-weight: 800; color: var(--accent-d); margin-bottom: 4px; }
+  .venta-card .vc-items { font-size: 14px; line-height: 1.5; }
+  .venta-card .vc-nota { font-style: italic; color: var(--muted); }
+  .venta-card .vc-detalles { font-size: 14px; font-style: italic; color: var(--muted); margin-top: 4px; }
+  .venta-card .vc-foot { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+  .vc-badge {
+    font-size: 12px; font-weight: 700;
+    padding: 4px 10px; border-radius: 999px;
+    background: var(--panel2); color: var(--accent-d);
+    border: 1px solid var(--border);
+  }
+  .vc-badge.warn { background: #fdecec; color: #b91c1c; border-color: #f3c6c6; }
+  .ventas-empty { text-align: center; color: var(--muted); font-size: 16px; padding: 48px 16px; }
+  .ventas-actions { display: flex; justify-content: flex-end; padding: 0 18px 14px; }
+  .btn-link-danger {
+    background: transparent;
+    border: 1px solid #f3c6c6;
+    color: #b91c1c;
+    border-radius: 10px;
+    font-size: 13px; font-weight: 700;
+    padding: 8px 14px;
+    cursor: pointer;
+  }
+  .btn-link-danger:active { background: #fdecec; }
 
   /* ---------- Comandas ---------- */
   .comandas-body { flex: 1; min-height: 0; display: flex; padding: 14px; overflow: hidden; }
@@ -500,22 +545,24 @@
     color: #fff;
     text-shadow: 0 1px 3px rgba(0,0,0,.45);
   }
-  .cfg-box input.cfg-name {
+  .cfg-box textarea.cfg-name {
     background: transparent;
     border: none;
     color: #fff;
     font-family: inherit;
-    font-size: 21px; font-weight: 700; line-height: 1.15;
+    font-size: 16px; font-weight: 700; line-height: 1.2;
     width: 100%;
     padding: 4px 26px 4px 4px;
     border-radius: 8px;
     text-shadow: 0 1px 3px rgba(0,0,0,.45);
+    resize: none;
+    overflow: hidden;
   }
-  .cfg-box input.cfg-name:focus { outline: 2px solid rgba(255,255,255,.75); background: rgba(0,0,0,.18); }
+  .cfg-box textarea.cfg-name:focus { outline: 2px solid rgba(255,255,255,.75); background: rgba(0,0,0,.18); }
   .cfg-price { position: relative; display: block; }
   .cfg-price .cur {
     position: absolute; left: 4px; top: 50%; transform: translateY(-50%);
-    color: #fff; font-size: 28px; font-weight: 800; pointer-events: none;
+    color: #fff; font-size: 21px; font-weight: 800; pointer-events: none;
     text-shadow: 0 1px 3px rgba(0,0,0,.45);
   }
   .cfg-box input.cfg-price-in {
@@ -523,9 +570,9 @@
     border: none;
     color: #fff;
     font-family: inherit;
-    font-size: 28px; font-weight: 800;
+    font-size: 21px; font-weight: 800;
     width: 100%;
-    padding: 4px 4px 4px 30px;
+    padding: 4px 4px 4px 24px;
     border-radius: 8px;
     font-variant-numeric: tabular-nums;
     text-shadow: 0 1px 3px rgba(0,0,0,.45);
@@ -561,6 +608,108 @@
   }
   .cfg-add-box:active { background: #dcebe1; }
   .config-foot { padding: 12px 14px; border-top: 1px solid var(--border); }
+  /* ---------- Pestañas de Configuración ---------- */
+  .config-tabs { display: flex; gap: 8px; padding: 12px 14px 0; }
+  .config-tab {
+    flex: 1; padding: 12px 8px;
+    border-radius: 10px; border: 1px solid var(--border);
+    background: var(--panel); color: var(--muted);
+    font-size: 15px; font-weight: 800; cursor: pointer;
+    min-height: 44px;
+  }
+  .config-tab.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+  /* ---------- Dispositivos ---------- */
+  .dev-section { margin-bottom: 22px; }
+  .dev-section h3 { font-size: 16px; color: var(--accent); margin: 0 0 10px; }
+  .dev-card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px;
+    margin-bottom: 12px;
+  }
+  .dev-card .dev-name {
+    width: 100%;
+    padding: 10px 12px;
+    border: 2px solid var(--border);
+    border-radius: 10px;
+    background: var(--panel2);
+    color: var(--text);
+    font-family: inherit;
+    font-size: 16px; font-weight: 700;
+    margin-bottom: 10px;
+  }
+  .dev-card .dev-name:focus { outline: none; border-color: var(--accent); }
+  .dev-card .dev-type {
+    width: 100%;
+    padding: 10px 12px;
+    border: 2px solid var(--border);
+    border-radius: 10px;
+    background: var(--panel2);
+    color: var(--text);
+    font-family: inherit;
+    font-size: 15px; font-weight: 700;
+    margin-bottom: 10px;
+  }
+  .dev-perms { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 12px; margin-bottom: 12px; }
+  .dev-perms label { display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 600; color: var(--text); cursor: pointer; }
+  .dev-perms input { width: 20px; height: 20px; accent-color: var(--accent); }
+  .dev-del {
+    width: 100%;
+    padding: 10px;
+    border-radius: 10px; border: 1px solid #f3c6c6;
+    background: transparent; color: #b91c1c;
+    font-size: 14px; font-weight: 800; cursor: pointer;
+  }
+  .dev-add {
+    width: 100%;
+    padding: 14px;
+    border-radius: 12px;
+    border: 2px dashed var(--border);
+    background: var(--panel2);
+    color: var(--accent);
+    font-size: 16px; font-weight: 800;
+    cursor: pointer;
+  }
+  .dev-note { font-size: 13px; color: var(--muted); line-height: 1.45; margin-top: 10px; }
+  .printer-field { margin-bottom: 12px; }
+  .printer-field label { display: block; font-size: 14px; font-weight: 700; color: var(--muted); margin-bottom: 6px; }
+  .printer-field input[type="text"], .printer-field select {
+    width: 100%;
+    padding: 10px 12px;
+    border: 2px solid var(--border);
+    border-radius: 10px;
+    background: var(--panel2);
+    color: var(--text);
+    font-family: inherit;
+    font-size: 15px; font-weight: 700;
+  }
+  .printer-field input:focus, .printer-field select:focus { outline: none; border-color: var(--accent); }
+  .printer-toggle { display: flex; align-items: center; gap: 10px; font-size: 15px; font-weight: 700; color: var(--text); cursor: pointer; margin-bottom: 14px; }
+  .printer-toggle input { width: 22px; height: 22px; accent-color: var(--accent); }
+  .btn-print-test {
+    width: 100%;
+    padding: 14px;
+    border-radius: 12px; border: none;
+    background: var(--accent); color: #fff;
+    font-size: 16px; font-weight: 900;
+    cursor: pointer; min-height: 52px;
+  }
+  /* ---------- Ticket para imprimir ---------- */
+  #printTicket { display: none; }
+  @media print {
+    body > *:not(#printTicket) { display: none !important; }
+    #printTicket { display: block !important; }
+    @page { margin: 0; }
+  }
+  #printTicket { font-family: "Courier New", monospace; color: #000; padding: 8px; }
+  #printTicket .pt-head { text-align: center; margin-bottom: 8px; }
+  #printTicket .pt-title { font-size: 16px; font-weight: 900; }
+  #printTicket .pt-sub { font-size: 12px; }
+  #printTicket .pt-line { border-top: 1px dashed #000; margin: 6px 0; }
+  #printTicket .pt-row { display: flex; justify-content: space-between; font-size: 13px; margin: 2px 0; }
+  #printTicket .pt-total { font-size: 15px; font-weight: 900; }
+  #printTicket .pt-foot { text-align: center; font-size: 12px; margin-top: 8px; }
   .btn-save-config {
     width: 100%;
     padding: 16px;
@@ -692,8 +841,13 @@
     <button class="back-btn" id="btnBackConfig"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg> Inicio</button>
     <span class="stitle">Configuración</span>
   </header>
+  <div class="config-tabs">
+    <button class="config-tab active" id="tabConfigProductos">Productos</button>
+    <button class="config-tab" id="tabConfigDispositivos">Dispositivos</button>
+  </div>
   <div class="config-body" id="configBody"></div>
-  <div class="config-foot">
+  <div class="config-body hidden" id="devicesBody"></div>
+  <div class="config-foot" id="configFoot">
     <button class="btn-save-config" id="btnGuardarConfig">Guardar cambios</button>
   </div>
 </section>
@@ -703,9 +857,15 @@
     <button class="back-btn" id="btnBackVentas"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg> Inicio</button>
     <span class="stitle">Ventas</span>
   </header>
-  <div class="ventas-body" id="ventasBody"></div>
-  <div class="ventas-foot">
-    <button class="btn-danger" id="btnLimpiarVentas">Borrar historial</button>
+  <div class="ventas-wrap">
+    <div class="ventas-summary">
+      <div class="vs-card"><span class="vs-label">Total vendido</span><span class="vs-value" id="ventasTotal">$0.00</span></div>
+      <div class="vs-card"><span class="vs-label">Ventas</span><span class="vs-value" id="ventasCount">0</span></div>
+    </div>
+    <div class="ventas-body" id="ventasBody"></div>
+    <div class="ventas-actions">
+      <button class="btn-link-danger" id="btnLimpiarVentas">Borrar historial</button>
+    </div>
   </div>
 </section>
 
@@ -769,6 +929,8 @@
 
 <div class="toast" id="toast"></div>
 
+<div id="printTicket"></div>
+
 <script>
 /* ================= Catálogo (edita aquí precios y productos) ================= */
 const CATALOG_DEFAULTS = [
@@ -815,6 +977,9 @@ const LS_COMANDA_SEQ = 'pvtaqueria_comandaSeq';
 const LS_CATALOG = 'pvtaqueria_catalog';
 const LS_TICKET  = 'pvtaqueria_ticket';
 const LS_TAB     = 'pvtaqueria_tab';
+const LS_CONFIG_TAB = 'pvtaqueria_config_tab';
+const LS_PRINTER = 'pvtaqueria_printer';
+const LS_DEVICES = 'pvtaqueria_devices';
 
 let catalog = load(LS_CATALOG, null);
 if (!catalog) catalog = JSON.parse(JSON.stringify(CATALOG_DEFAULTS));
@@ -846,6 +1011,16 @@ let cortes = load(LS_CORTES, []);                // cortes X (parciales) y Z (ci
 if (!Array.isArray(cortes)) cortes = [];
 cortes.forEach(c => { if (c && !c.type) c.type = 'Z'; });   // cortes viejos = Z
 let lastCorteIndex = load(LS_LASTCUT, 0);        // sales index since last corte (when no session)
+let configTab = load(LS_CONFIG_TAB, 'productos');
+if (configTab !== 'productos' && configTab !== 'dispositivos') configTab = 'productos';
+let printerSettings = load(LS_PRINTER, null) || { nombre: '', ancho: 80, autoPrint: false };
+if (printerSettings.ancho !== 58 && printerSettings.ancho !== 80) printerSettings.ancho = 80;
+let devices = load(LS_DEVICES, null);
+if (devices === null) {
+  devices = [{ id: 'dev-' + Date.now().toString(36), nombre: 'Este dispositivo', tipo: 'Celular', permisos: { pos: true, comandas: true, cobrar: true, cortes: true, ventas: true, configuracion: true } }];
+  save(LS_DEVICES, devices);
+}
+if (!Array.isArray(devices)) devices = [];
 
 function load(key, fallback) {
   try { const v = JSON.parse(localStorage.getItem(key)); return v == null ? fallback : v; }
@@ -1154,6 +1329,7 @@ document.getElementById('btnConfirmarCobro').addEventListener('click', () => {
   if (payCtx.kind === 'comanda' && payCtx.comanda.detalles) venta.detalles = payCtx.comanda.detalles;
   sales.push(venta);
   save(LS_SALES, sales);
+  if (printerSettings.autoPrint) printTicketHtml(buildPrintTicketHtml(venta, false));
   refreshAll();
   renderComandas();
   updateHomeComandas();
@@ -1309,18 +1485,35 @@ document.getElementById('btnCerrarCaja').addEventListener('click', () => {
 /* ================= Ventas (pantalla) ================= */
 function renderVentas() {
   const body = document.getElementById('ventasBody');
+  const totalEl = document.getElementById('ventasTotal');
+  const countEl = document.getElementById('ventasCount');
+  const totalVendido = sales.reduce((a, v) => a + (Number(v.total) || 0), 0);
+  if (totalEl) totalEl.textContent = fmt(totalVendido);
+  if (countEl) countEl.textContent = String(sales.length);
   if (!sales.length) {
-    body.innerHTML = '<div class="note">Todavía no hay ventas registradas.</div>';
+    body.innerHTML = '<div class="ventas-empty">Todavía no hay ventas registradas.</div>';
     return;
   }
   let html = '';
   [...sales].reverse().forEach(v => {
-    const itemsTxt = v.items.map(i => i.qty + '× ' + i.name + (i.nota ? ' (' + i.nota + ')' : '')).join(', ');
-    const clienteTxt = v.cliente ? ' · Cliente: ' + escapeHtml(v.cliente) : '';
-    const detallesTxt = v.detalles ? '<br><span class="st">Detalles: ' + escapeHtml(v.detalles) + '</span>' : '';
-    html += '<div class="sale-item"><span class="sa">' + fmt(v.total) + '</span>' +
-            '<span class="st">' + fmtDateTime(v.datetime) + (v.sessionOpen ? '' : ' · sin sesión') + clienteTxt + '</span><br>' +
-            itemsTxt + detallesTxt + '<br><span class="st">Recibido ' + fmt(v.received) + ' · Cambio ' + fmt(v.change) + '</span></div>';
+    const itemsHtml = v.items.map(i =>
+      '<div class="vc-item"><span>' + i.qty + '× ' + escapeHtml(i.name) + '</span>' +
+      (i.nota ? ' <span class="vc-nota">(' + escapeHtml(i.nota) + ')</span>' : '') + '</div>'
+    ).join('');
+    const clienteHtml = v.cliente ? '<div class="vc-cliente">Cliente: ' + escapeHtml(v.cliente) + '</div>' : '';
+    const detallesHtml = v.detalles ? '<div class="vc-detalles">Detalles: ' + escapeHtml(v.detalles) + '</div>' : '';
+    const badges =
+      '<span class="vc-badge">Recibido ' + fmt(v.received) + '</span>' +
+      '<span class="vc-badge">Cambio ' + fmt(v.change) + '</span>' +
+      (v.sessionOpen ? '' : '<span class="vc-badge warn">Sin sesión</span>');
+    html += '<article class="venta-card">' +
+      '<div class="vc-head"><span class="vc-total">' + fmt(v.total) + '</span>' +
+      '<span class="vc-time">' + fmtDateTime(v.datetime) + '</span></div>' +
+      clienteHtml +
+      '<div class="vc-items">' + itemsHtml + '</div>' +
+      detallesHtml +
+      '<div class="vc-foot">' + badges + '</div>' +
+      '</article>';
   });
   body.innerHTML = html;
 }
@@ -1434,6 +1627,196 @@ function cfgNewId() {
 function openConfig() {
   configDraft = JSON.parse(JSON.stringify(catalog));
   renderConfig();
+  showConfigTab(configTab);
+}
+function showConfigTab(tab) {
+  configTab = (tab === 'dispositivos') ? 'dispositivos' : 'productos';
+  save(LS_CONFIG_TAB, configTab);
+  document.getElementById('tabConfigProductos').classList.toggle('active', configTab === 'productos');
+  document.getElementById('tabConfigDispositivos').classList.toggle('active', configTab === 'dispositivos');
+  document.getElementById('configBody').classList.toggle('hidden', configTab !== 'productos');
+  document.getElementById('configFoot').classList.toggle('hidden', configTab !== 'productos');
+  document.getElementById('devicesBody').classList.toggle('hidden', configTab !== 'dispositivos');
+  if (configTab === 'dispositivos') renderDevices();
+}
+document.getElementById('tabConfigProductos').addEventListener('click', () => showConfigTab('productos'));
+document.getElementById('tabConfigDispositivos').addEventListener('click', () => showConfigTab('dispositivos'));
+
+/* ================= Dispositivos (pestaña de Configuración) ================= */
+const DEVICE_TYPES = ['Caja', 'Computadora', 'Tablet', 'Celular', 'Otro'];
+const DEVICE_PERMS = [
+  { key: 'pos', label: 'Punto de venta' },
+  { key: 'comandas', label: 'Comandas' },
+  { key: 'cobrar', label: 'Cobrar' },
+  { key: 'cortes', label: 'Cortes de caja' },
+  { key: 'ventas', label: 'Ventas' },
+  { key: 'configuracion', label: 'Configuración' }
+];
+function savePrinter() { save(LS_PRINTER, printerSettings); }
+function saveDevices() { save(LS_DEVICES, devices); }
+
+function renderDevices() {
+  const body = document.getElementById('devicesBody');
+  body.innerHTML = '';
+
+  /* --- Impresora de tickets --- */
+  const secP = document.createElement('div');
+  secP.className = 'dev-section';
+  const hP = document.createElement('h3');
+  hP.textContent = 'Impresora de tickets';
+  secP.appendChild(hP);
+
+  const fNombre = document.createElement('div');
+  fNombre.className = 'printer-field';
+  const lblNombre = document.createElement('label');
+  lblNombre.textContent = 'Nombre de la impresora';
+  fNombre.appendChild(lblNombre);
+  const inpNombre = document.createElement('input');
+  inpNombre.type = 'text';
+  inpNombre.placeholder = 'Ej. TM-T20 (opcional)';
+  inpNombre.value = printerSettings.nombre || '';
+  inpNombre.addEventListener('input', () => { printerSettings.nombre = inpNombre.value; savePrinter(); });
+  fNombre.appendChild(inpNombre);
+  secP.appendChild(fNombre);
+
+  const fAncho = document.createElement('div');
+  fAncho.className = 'printer-field';
+  const lblAncho = document.createElement('label');
+  lblAncho.textContent = 'Ancho de papel';
+  fAncho.appendChild(lblAncho);
+  const selAncho = document.createElement('select');
+  [58, 80].forEach(mm => {
+    const o = document.createElement('option');
+    o.value = String(mm);
+    o.textContent = mm + ' mm';
+    if (Number(printerSettings.ancho) === mm) o.selected = true;
+    selAncho.appendChild(o);
+  });
+  selAncho.addEventListener('change', () => { printerSettings.ancho = Number(selAncho.value); savePrinter(); });
+  fAncho.appendChild(selAncho);
+  secP.appendChild(fAncho);
+
+  const lblAuto = document.createElement('label');
+  lblAuto.className = 'printer-toggle';
+  const chkAuto = document.createElement('input');
+  chkAuto.type = 'checkbox';
+  chkAuto.checked = !!printerSettings.autoPrint;
+  chkAuto.addEventListener('change', () => { printerSettings.autoPrint = chkAuto.checked; savePrinter(); });
+  lblAuto.appendChild(chkAuto);
+  lblAuto.appendChild(document.createTextNode('Imprimir ticket automáticamente al cobrar'));
+  secP.appendChild(lblAuto);
+
+  const btnTest = document.createElement('button');
+  btnTest.className = 'btn-print-test';
+  btnTest.textContent = 'Imprimir ticket de prueba';
+  btnTest.addEventListener('click', () => printSampleTicket());
+  secP.appendChild(btnTest);
+  body.appendChild(secP);
+
+  /* --- Dispositivos conectados --- */
+  const secD = document.createElement('div');
+  secD.className = 'dev-section';
+  const hD = document.createElement('h3');
+  hD.textContent = 'Dispositivos conectados';
+  secD.appendChild(hD);
+
+  devices.forEach(dev => {
+    const card = document.createElement('div');
+    card.className = 'dev-card';
+    const inpName = document.createElement('input');
+    inpName.type = 'text';
+    inpName.className = 'dev-name';
+    inpName.placeholder = 'Nombre del dispositivo';
+    inpName.value = dev.nombre || '';
+    inpName.addEventListener('input', () => { dev.nombre = inpName.value; saveDevices(); });
+    card.appendChild(inpName);
+    const selTipo = document.createElement('select');
+    selTipo.className = 'dev-type';
+    DEVICE_TYPES.forEach(t => {
+      const o = document.createElement('option');
+      o.value = t; o.textContent = t;
+      if (dev.tipo === t) o.selected = true;
+      selTipo.appendChild(o);
+    });
+    selTipo.addEventListener('change', () => { dev.tipo = selTipo.value; saveDevices(); });
+    card.appendChild(selTipo);
+    const perms = document.createElement('div');
+    perms.className = 'dev-perms';
+    DEVICE_PERMS.forEach(p => {
+      const lbl = document.createElement('label');
+      const chk = document.createElement('input');
+      chk.type = 'checkbox';
+      chk.checked = !!(dev.permisos && dev.permisos[p.key]);
+      chk.addEventListener('change', () => {
+        if (!dev.permisos) dev.permisos = {};
+        dev.permisos[p.key] = chk.checked;
+        saveDevices();
+      });
+      lbl.appendChild(chk);
+      lbl.appendChild(document.createTextNode(p.label));
+      perms.appendChild(lbl);
+    });
+    card.appendChild(perms);
+    const btnDel = document.createElement('button');
+    btnDel.className = 'dev-del';
+    btnDel.textContent = 'Eliminar dispositivo';
+    btnDel.addEventListener('click', () => {
+      if (!confirm('¿Eliminar "' + (String(dev.nombre || '').trim() || 'este dispositivo') + '"?')) return;
+      devices = devices.filter(x => x.id !== dev.id);
+      saveDevices();
+      renderDevices();
+    });
+    card.appendChild(btnDel);
+    secD.appendChild(card);
+  });
+
+  const btnAdd = document.createElement('button');
+  btnAdd.className = 'dev-add';
+  btnAdd.textContent = '＋ Agregar dispositivo';
+  btnAdd.addEventListener('click', () => {
+    devices.push({ id: 'dev-' + Date.now().toString(36) + '-' + devices.length, nombre: '', tipo: 'Otro', permisos: { pos: false, comandas: false, cobrar: false, cortes: false, ventas: false, configuracion: false } });
+    saveDevices();
+    renderDevices();
+    const cards = document.querySelectorAll('#devicesBody .dev-card');
+    const last = cards.length ? cards[cards.length - 1].querySelector('.dev-name') : null;
+    if (last && last.focus) last.focus();
+  });
+  secD.appendChild(btnAdd);
+
+  const note = document.createElement('div');
+  note.className = 'dev-note';
+  note.textContent = 'Los dispositivos y permisos se guardan en este dispositivo. La sincronización entre dispositivos llegará después.';
+  secD.appendChild(note);
+  body.appendChild(secD);
+}
+
+/* ================= Impresión de tickets ================= */
+function buildPrintTicketHtml(sale, esPrueba) {
+  const items = sale.items.map(i => '<div class="pt-row"><span>' + i.qty + 'x ' + escapeHtml(i.name) + '</span><span>' + fmt(i.subtotal) + '</span></div>').join('');
+  return '<div class="pt-head"><div class="pt-title">Taquería "El Vergel"</div>' +
+    (printerSettings.nombre ? '<div class="pt-sub">' + escapeHtml(printerSettings.nombre) + '</div>' : '') +
+    '<div class="pt-sub">' + (esPrueba ? 'Ticket de prueba' : fmtDateTime(sale.datetime)) + '</div></div>' +
+    '<div class="pt-line"></div>' + items + '<div class="pt-line"></div>' +
+    '<div class="pt-row pt-total"><span>Total</span><span>' + fmt(sale.total) + '</span></div>' +
+    '<div class="pt-row"><span>Recibido</span><span>' + fmt(sale.received) + '</span></div>' +
+    '<div class="pt-row"><span>Cambio</span><span>' + fmt(sale.change) + '</span></div>' +
+    '<div class="pt-foot">Gracias por su preferencia</div>';
+}
+function printTicketHtml(htmlStr) {
+  const el = document.getElementById('printTicket');
+  el.style.width = (Number(printerSettings.ancho) === 58 ? '58mm' : '80mm');
+  el.innerHTML = htmlStr;
+  if (typeof window.print === 'function') window.print();
+}
+function printSampleTicket() {
+  printTicketHtml(buildPrintTicketHtml({
+    datetime: nowISO(),
+    items: [
+      { name: 'Orden de suadero', qty: 2, subtotal: 260 },
+      { name: 'Coca Cola', qty: 1, subtotal: 30 }
+    ],
+    total: 290, received: 300, change: 10
+  }, true));
 }
 function renderConfig() {
   configRowByPid = new Map();
@@ -1466,17 +1849,20 @@ function renderConfig() {
           for (const sec2 of cat.sections) sec2.items = sec2.items.filter(x => x.id !== p.id);
           renderConfig();
         });
-        const nameIn = document.createElement('input');
-        nameIn.type = 'text';
+        const nameIn = document.createElement('textarea');
+        nameIn.rows = 1;
         nameIn.className = 'cfg-name';
         nameIn.value = p.name;
         nameIn.placeholder = 'Nombre';
         nameIn.dataset.pid = p.id;
         nameIn.dataset.field = 'name';
+        const autoGrowName = () => { nameIn.style.height = 'auto'; nameIn.style.height = nameIn.scrollHeight + 'px'; };
         nameIn.addEventListener('input', () => {
+          nameIn.value = nameIn.value.replace(/[\r\n]+/g, ' ');
           const prod = cfgFindProduct(p.id);
           if (prod) prod.name = nameIn.value;
           box.classList.remove('invalid');
+          autoGrowName();
         });
         const priceWrap = document.createElement('span');
         priceWrap.className = 'cfg-price';
@@ -1500,6 +1886,7 @@ function renderConfig() {
         priceWrap.appendChild(priceIn);
         box.appendChild(delBtn);
         box.appendChild(nameIn);
+        autoGrowName();
         box.appendChild(priceWrap);
         configRowByPid.set(p.id, box);
         grid.appendChild(box);
