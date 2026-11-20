@@ -248,6 +248,23 @@
     font-variant-numeric: tabular-nums;
   }
   .field input:focus { outline: none; border-color: var(--accent); }
+  .field input.txt, .field textarea.txt {
+    font-size: 17px;
+    font-weight: 600;
+    font-variant-numeric: normal;
+    resize: vertical;
+    font-family: inherit;
+  }
+  .field textarea.txt:focus { outline: none; border-color: var(--accent); }
+  .comanda-item-row { display: flex; gap: 8px; align-items: center; margin-bottom: 8px; }
+  .comanda-item-row .ci-name { font-weight: 700; font-size: 15px; min-width: 130px; flex: none; }
+  .comanda-nota {
+    flex: 1; min-width: 0;
+    font-size: 15px; font-weight: 600; font-family: inherit;
+    padding: 8px 10px; border-radius: 10px;
+    border: 2px solid var(--border); background: var(--panel2); color: var(--text);
+  }
+  .comanda-nota:focus { outline: none; border-color: var(--accent); }
   .quick { display: flex; gap: 8px; flex-wrap: wrap; margin: 10px 0; }
   .qchip {
     border: 1px solid var(--border);
@@ -418,6 +435,8 @@
   }
   .comanda-card .c-head { display: flex; justify-content: space-between; align-items: baseline; font-weight: 900; margin-bottom: 8px; }
   .comanda-card .c-time { color: var(--muted); font-weight: 600; font-size: 13px; }
+  .comanda-card .c-cliente { font-size: 15px; font-weight: 800; color: var(--accent); margin-bottom: 6px; }
+  .comanda-card .c-detalles { font-size: 14px; font-style: italic; color: var(--muted); margin-bottom: 6px; }
   .comanda-card .c-item { display: flex; justify-content: space-between; font-size: 14px; padding: 3px 0; }
   .comanda-card .c-total { text-align: right; font-weight: 900; font-size: 18px; color: var(--accent); margin: 8px 0; }
   .comanda-card .c-btns { display: flex; gap: 8px; }
@@ -604,7 +623,6 @@
       <div class="ticket-btns">
         <button class="btn-clear" id="btnVaciar">Vaciar</button>
         <button class="btn-comanda" id="btnComanda" disabled>Comanda</button>
-        <button class="btn-pay" id="btnCobrar" disabled>Cobrar</button>
       </div>
     </div>
   </aside>
@@ -657,6 +675,31 @@
     <div class="modal-btns">
       <button class="btn-cancel" data-close="ovCobrar">Cancelar</button>
       <button class="btn-ok" id="btnConfirmarCobro" disabled>Confirmar cobro</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Comanda: nombre del cliente -->
+<div class="overlay" id="ovComanda">
+  <div class="modal">
+    <h3>Crear comanda</h3>
+    <div class="note">Total de la comanda</div>
+    <div class="big-total" id="comandaTotal">$0.00</div>
+    <div class="field">
+      <label for="inpCliente">Nombre del cliente (opcional)</label>
+      <input class="txt" id="inpCliente" type="text" placeholder="Ej. Juan" maxlength="60">
+    </div>
+    <div class="field">
+      <label>Notas por producto (opcional)</label>
+      <div id="comandaItems"></div>
+    </div>
+    <div class="field">
+      <label for="inpDetalles">Detalles (opcional)</label>
+      <textarea class="txt" id="inpDetalles" rows="2" maxlength="200" placeholder="Ej. sin cebolla, para llevar"></textarea>
+    </div>
+    <div class="modal-btns">
+      <button class="btn-cancel" data-close="ovComanda">Cancelar</button>
+      <button class="btn-ok" id="btnConfirmarComanda">Crear comanda</button>
     </div>
   </div>
 </div>
@@ -787,6 +830,9 @@ function productById(id) {
 function fmt(n) {
   return '$' + Number(n).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
+function escapeHtml(s) {
+  return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
 function nowISO() { return new Date().toISOString(); }
 function fmtDateTime(iso) {
   const d = new Date(iso);
@@ -906,7 +952,6 @@ function renderTicket() {
   }
   const total = ticketTotal();
   document.getElementById('totalVal').textContent = fmt(total);
-  document.getElementById('btnCobrar').disabled = total <= 0;
   document.getElementById('btnComanda').disabled = total <= 0;
 }
 function saveTicket() {
@@ -924,38 +969,65 @@ document.getElementById('btnVaciar').addEventListener('click', () => {
   if (!Object.keys(ticket).length) return;
   ticket = {}; refreshAll();
 });
+const inpCliente = document.getElementById('inpCliente');
+const inpDetalles = document.getElementById('inpDetalles');
+let comandaNotaInputs = [];
 document.getElementById('btnComanda').addEventListener('click', () => {
   const ids = Object.keys(ticket).filter(id => ticket[id] > 0 && productById(id));
   if (!ids.length) return;
-  const items = ids.map(id => {
+  document.getElementById('comandaTotal').textContent = fmt(ticketTotal());
+  inpCliente.value = '';
+  inpDetalles.value = '';
+  const box = document.getElementById('comandaItems');
+  box.innerHTML = '';
+  comandaNotaInputs = [];
+  ids.forEach(id => {
     const p = productById(id);
-    return { id: p.id, name: p.name, price: p.price, qty: ticket[id], subtotal: p.price * ticket[id] };
+    const row = document.createElement('div');
+    row.className = 'comanda-item-row';
+    row.innerHTML = '<span class="ci-name">' + ticket[id] + '× ' + escapeHtml(p.name) + '</span>';
+    const inp = document.createElement('input');
+    inp.type = 'text';
+    inp.className = 'comanda-nota';
+    inp.placeholder = 'Nota (opcional)';
+    inp.maxLength = 80;
+    row.appendChild(inp);
+    box.appendChild(row);
+    comandaNotaInputs.push(inp);
   });
+  showOv('ovComanda');
+  setTimeout(() => inpCliente.focus(), 60);
+});
+document.getElementById('btnConfirmarComanda').addEventListener('click', () => {
+  const ids = Object.keys(ticket).filter(id => ticket[id] > 0 && productById(id));
+  if (!ids.length) { hideOv('ovComanda'); return; }
+  const items = ids.map((id, idx) => {
+    const p = productById(id);
+    const nota = comandaNotaInputs[idx] ? comandaNotaInputs[idx].value.trim() : '';
+    const it = { id: p.id, name: p.name, price: p.price, qty: ticket[id], subtotal: p.price * ticket[id] };
+    if (nota) it.nota = nota;
+    return it;
+  });
+  const nombre = inpCliente.value.trim();
+  const detalles = inpDetalles.value.trim();
   comandaSeq += 1;
-  comandas.push({ id: comandaSeq, datetime: nowISO(), items: items, total: ticketTotal(), status: 'activa' });
+  const comanda = { id: comandaSeq, datetime: nowISO(), items: items, total: ticketTotal(), status: 'activa' };
+  if (nombre) comanda.cliente = nombre;
+  if (detalles) comanda.detalles = detalles;
+  comandas.push(comanda);
   save(LS_COMANDAS, comandas);
   save(LS_COMANDA_SEQ, comandaSeq);
   ticket = {}; refreshAll();
   updateHomeComandas();
+  hideOv('ovComanda');
   toast('Comanda #' + comandaSeq + ' creada');
 });
+inpCliente.addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('btnConfirmarComanda').click(); });
 
 /* ================= Cobrar ================= */
 const inpRecibido = document.getElementById('inpRecibido');
-let payCtx = null; // { kind:'ticket', total } | { kind:'comanda', comanda, total }
+let payCtx = null; // { kind:'comanda', comanda, total }
 function payTotal() { return payCtx ? payCtx.total : 0; }
-function openCobrar() {
-  const total = ticketTotal();
-  if (total <= 0) return;
-  payCtx = { kind: 'ticket', total: total };
-  document.getElementById('cobrarTitle').textContent = 'Cobrar';
-  document.getElementById('cobrarTotal').textContent = fmt(total);
-  inpRecibido.value = '';
-  renderQuickChips(total);
-  updateCambio();
-  showOv('ovCobrar');
-  setTimeout(() => inpRecibido.focus(), 60);
-}
 function openComandaPay(comanda) {
   payCtx = { kind: 'comanda', comanda: comanda, total: comanda.total };
   document.getElementById('cobrarTitle').textContent = 'Cobrar comanda #' + comanda.id;
@@ -992,7 +1064,6 @@ function updateCambio() {
 }
 inpRecibido.addEventListener('input', updateCambio);
 
-document.getElementById('btnCobrar').addEventListener('click', openCobrar);
 document.getElementById('btnConfirmarCobro').addEventListener('click', () => {
   if (!payCtx) return;
   const total = payCtx.total;
@@ -1000,7 +1071,11 @@ document.getElementById('btnConfirmarCobro').addEventListener('click', () => {
   if (rec < total) return;
   let items;
   if (payCtx.kind === 'comanda') {
-    items = payCtx.comanda.items.map(i => ({ id: i.id, name: i.name, price: i.price, qty: i.qty, subtotal: i.subtotal }));
+    items = payCtx.comanda.items.map(i => {
+      const it = { id: i.id, name: i.name, price: i.price, qty: i.qty, subtotal: i.subtotal };
+      if (i.nota) it.nota = i.nota;
+      return it;
+    });
     comandas = comandas.filter(c => c.id !== payCtx.comanda.id);
     save(LS_COMANDAS, comandas);
   } else {
@@ -1010,7 +1085,7 @@ document.getElementById('btnConfirmarCobro').addEventListener('click', () => {
     });
     ticket = {};
   }
-  sales.push({
+  const venta = {
     id: Date.now(),
     datetime: nowISO(),
     items: items,
@@ -1018,7 +1093,10 @@ document.getElementById('btnConfirmarCobro').addEventListener('click', () => {
     received: rec,
     change: rec - total,
     sessionOpen: !!session
-  });
+  };
+  if (payCtx.kind === 'comanda' && payCtx.comanda.cliente) venta.cliente = payCtx.comanda.cliente;
+  if (payCtx.kind === 'comanda' && payCtx.comanda.detalles) venta.detalles = payCtx.comanda.detalles;
+  sales.push(venta);
   save(LS_SALES, sales);
   refreshAll();
   renderComandas();
@@ -1093,7 +1171,7 @@ function buildCorteBody(list, opening, extraHtml) {
   if (list.length) {
     html += '<h3 style="font-size:16px;margin:16px 0 6px">Ventas del periodo</h3>';
     list.forEach(v => {
-      const itemsTxt = v.items.map(i => i.qty + '× ' + i.name).join(', ');
+      const itemsTxt = v.items.map(i => i.qty + '× ' + i.name + (i.nota ? ' (' + i.nota + ')' : '')).join(', ');
       html += '<div class="sale-item"><span class="sa">' + fmt(v.total) + '</span>' +
               '<span class="st">' + fmtDateTime(v.datetime) + '</span><br>' + itemsTxt + '</div>';
     });
@@ -1170,10 +1248,12 @@ document.getElementById('btnHistorial').addEventListener('click', () => {
   } else {
     let html = '';
     [...sales].reverse().forEach(v => {
-      const itemsTxt = v.items.map(i => i.qty + '× ' + i.name).join(', ');
+      const itemsTxt = v.items.map(i => i.qty + '× ' + i.name + (i.nota ? ' (' + i.nota + ')' : '')).join(', ');
+      const clienteTxt = v.cliente ? ' · Cliente: ' + escapeHtml(v.cliente) : '';
+      const detallesTxt = v.detalles ? '<br><span class="st">Detalles: ' + escapeHtml(v.detalles) + '</span>' : '';
       html += '<div class="sale-item"><span class="sa">' + fmt(v.total) + '</span>' +
-              '<span class="st">' + fmtDateTime(v.datetime) + (v.sessionOpen ? '' : ' · sin sesión') + '</span><br>' +
-              itemsTxt + '<br><span class="st">Recibido ' + fmt(v.received) + ' · Cambio ' + fmt(v.change) + '</span></div>';
+              '<span class="st">' + fmtDateTime(v.datetime) + (v.sessionOpen ? '' : ' · sin sesión') + clienteTxt + '</span><br>' +
+              itemsTxt + detallesTxt + '<br><span class="st">Recibido ' + fmt(v.received) + ' · Cambio ' + fmt(v.change) + '</span></div>';
     });
     body.innerHTML = html;
   }
@@ -1230,9 +1310,11 @@ function updateHomeComandas() {
 function comandaCard(c, isActiva) {
   const card = document.createElement('div');
   card.className = 'comanda-card';
-  let itemsHtml = c.items.map(i => '<div class="c-item"><span>' + i.qty + '× ' + i.name + '</span><span>' + fmt(i.subtotal) + '</span></div>').join('');
+  let itemsHtml = c.items.map(i => '<div class="c-item"><span>' + i.qty + '× ' + i.name + (i.nota ? ' — ' + escapeHtml(i.nota) : '') + '</span><span>' + fmt(i.subtotal) + '</span></div>').join('');
+  const clienteHtml = c.cliente ? '<div class="c-cliente">Cliente: ' + escapeHtml(c.cliente) + '</div>' : '';
+  const detallesHtml = c.detalles ? '<div class="c-detalles">Detalles: ' + escapeHtml(c.detalles) + '</div>' : '';
   card.innerHTML = '<div class="c-head"><span>Comanda #' + c.id + '</span><span class="c-time">' + fmtDateTime(c.datetime) + '</span></div>' +
-    itemsHtml + '<div class="c-total">' + fmt(c.total) + '</div>';
+    clienteHtml + detallesHtml + itemsHtml + '<div class="c-total">' + fmt(c.total) + '</div>';
   const btns = document.createElement('div');
   btns.className = 'c-btns';
   if (isActiva) {
