@@ -1027,8 +1027,45 @@ const LS_DEVICES = 'pvtaqueria_devices';
 const LS_NOMBRE = 'pvtaqueria_nombre';
 const LS_SUCURSAL = 'pvtaqueria_sucursal';
 
+function isValidProduct(p) {
+  if (!p) return false;
+  const okName = String(p.name || '').trim().length > 0;
+  const pv = parseFloat(p.price);
+  return okName && !isNaN(pv) && pv > 0;
+}
+function pruneCatalogItems(cat) {
+  if (!Array.isArray(cat)) return 0;
+  let dropped = 0;
+  for (const c of cat) {
+    if (!c || !Array.isArray(c.sections)) continue;
+    for (const sec of c.sections) {
+      if (!sec || !Array.isArray(sec.items)) continue;
+      const before = sec.items.length;
+      sec.items = sec.items.filter(isValidProduct);
+      dropped += before - sec.items.length;
+    }
+  }
+  return dropped;
+}
+function countCatalogItems(cat) {
+  if (!Array.isArray(cat)) return 0;
+  let n = 0;
+  for (const c of cat) if (c && Array.isArray(c.sections)) for (const sec of c.sections) if (sec && Array.isArray(sec.items)) n += sec.items.length;
+  return n;
+}
+
 let catalog = load(LS_CATALOG, null);
-if (!catalog) catalog = JSON.parse(JSON.stringify(CATALOG_DEFAULTS));
+if (!catalog) {
+  catalog = JSON.parse(JSON.stringify(CATALOG_DEFAULTS));
+} else {
+  // Si un producto está nulo (sin nombre o sin precio válido) se borra automáticamente
+  const droppedOnLoad = pruneCatalogItems(catalog);
+  if (countCatalogItems(catalog) === 0) {
+    catalog = JSON.parse(JSON.stringify(CATALOG_DEFAULTS));
+  } else if (droppedOnLoad > 0) {
+    save(LS_CATALOG, catalog);
+  }
+}
 
 let ticket = {};           // productId -> qty (persiste entre recargas)
 let ticketCliente = '';    // nombre del cliente (opcional)
@@ -1694,6 +1731,7 @@ function autoGrowCfgName(el) {
 }
 function openConfig() {
   configDraft = JSON.parse(JSON.stringify(catalog));
+  pruneCatalogItems(configDraft);  // defensa: nunca mostrar recuadros vacíos
   renderConfig();
   showConfigTab(configTab);
 }
@@ -2128,24 +2166,13 @@ function renderConfig() {
   document.querySelectorAll('textarea.cfg-name').forEach(autoGrowCfgName);
 }
 document.getElementById('btnGuardarConfig').addEventListener('click', () => {
-  // Validar: nombre no vacío y precio > 0
-  let firstInvalidRow = null;
-  configRowByPid.forEach((row, pid) => row.classList.remove('invalid'));
-  for (const cat of configDraft) for (const sec of cat.sections) for (const p of sec.items) {
-    const okName = String(p.name || '').trim().length > 0;
-    const pv = parseFloat(p.price);
-    const okPrice = !isNaN(pv) && pv > 0;
-    if (!okName || !okPrice) {
-      const row = configRowByPid.get(p.id);
-      if (row) {
-        row.classList.add('invalid');
-        if (!firstInvalidRow) firstInvalidRow = row;
-      }
-    }
-  }
-  if (firstInvalidRow) {
-    if (firstInvalidRow.scrollIntoView) firstInvalidRow.scrollIntoView({ block: 'center' });
-    toast('Revisa los campos en rojo: nombre y precio (> 0)');
+  // Si un producto está nulo (sin nombre o sin precio válido) se borra automáticamente
+  const dropped = pruneCatalogItems(configDraft);
+  if (countCatalogItems(configDraft) === 0) {
+    // No borrar todo el catálogo: restaurar el borrador y avisar
+    configDraft = JSON.parse(JSON.stringify(catalog));
+    renderConfig();
+    toast('No se guardó: todos los productos están sin nombre o precio');
     return;
   }
   // Normalizar y guardar
@@ -2160,7 +2187,9 @@ document.getElementById('btnGuardarConfig').addEventListener('click', () => {
   saveTicket();
   if (!catalog.find(c => c.id === activeCat)) activeCat = catalog[0] ? catalog[0].id : null;
   renderTabs(); renderGrid(); renderTicket();
-  toast('Configuración guardada');
+  renderConfig();
+  if (dropped > 0) toast('Configuración guardada (' + dropped + ' producto(s) sin nombre o precio eliminados)');
+  else toast('Configuración guardada');
 });
 
 /* ================= Init ================= */
