@@ -1,4 +1,4 @@
-# Punto de Venta — Taquería
+# Punto de venta - Taquería "El Vergel"
 
 Punto de venta web para una taquería: toca los productos para armar el ticket, cobra con cambio calculado y lleva apertura y corte de caja. Todo corre en el navegador, sin servidor.
 

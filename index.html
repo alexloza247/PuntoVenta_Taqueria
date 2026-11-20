@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Punto de Venta — Taquería</title>
+<title>Punto de venta - Taquería "El Vergel"</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   :root {
@@ -83,14 +83,14 @@
   .tab.active { background: var(--accent); border-color: var(--accent); color: #06130a; }
   .grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-    gap: 12px;
+    grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+    gap: 16px;
   }
   .tile {
     border: none;
     border-radius: var(--radius);
-    padding: 18px 12px 14px;
-    min-height: 118px;
+    padding: 24px 16px 18px;
+    min-height: 160px;
     display: flex;
     flex-direction: column;
     align-items: flex-start;
@@ -103,14 +103,14 @@
     text-align: left;
   }
   .tile:active { transform: scale(.96); }
-  .tile .price { font-size: 22px; font-weight: 800; }
-  .tile .name { font-size: 17px; font-weight: 700; line-height: 1.15; }
+  .tile .price { font-size: 28px; font-weight: 800; }
+  .tile .name { font-size: 21px; font-weight: 700; line-height: 1.15; }
   .tile .qty-badge {
     align-self: flex-end;
     background: rgba(0,0,0,.45);
     border-radius: 999px;
-    padding: 2px 10px;
-    font-size: 14px;
+    padding: 3px 12px;
+    font-size: 16px;
     font-weight: 800;
     display: none;
   }
@@ -278,14 +278,14 @@
   @media (max-width: 900px) {
     main { flex-direction: column; }
     .ticket { width: 100%; }
-    .grid { grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); }
+    .grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
   }
 </style>
 </head>
 <body>
 
 <header>
-  <div class="brand">Punto de Venta <span>— Taquería</span></div>
+  <div class="brand">Punto de venta - Taquería <span>"El Vergel"</span></div>
   <div class="clock" id="clock"></div>
   <div class="spacer"></div>
   <button class="hbtn" id="btnHistorial">Historial</button>
