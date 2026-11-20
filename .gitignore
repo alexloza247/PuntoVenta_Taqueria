@@ -1,0 +1,7 @@
+# El exe del servidor es un binario: se genera con build-exe.sh y se
+# entrega aparte, nunca se sube a GitHub.
+dist/
+# Datos del servidor en red (se crean junto al exe al correrlo).
+data.json
+data.json.bak
+data.json.tmp

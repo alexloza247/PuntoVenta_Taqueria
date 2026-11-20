@@ -32,6 +32,21 @@ La computadora puede ser el servidor y las tablets conectarse a ella para mandar
 4. **Primera vez:** el primer dispositivo que se conecte manda sus datos al servidor (si tu celular ya tiene ventas y la computadora está vacía, conecta primero el celular para conservar esos datos). Después, el servidor manda en todo: lo que se haga en un dispositivo aparece en los demás.
 5. **Si abres la app desde otro lugar** (por ejemplo el archivo `index.html` o GitHub Pages), ve a **Configuración → Dispositivos → "Sincronización en red"**, escribe la dirección de la computadora y toca **Conectar**. Para sincronizar, lo recomendado es abrir la app desde la dirección del servidor en todos los dispositivos.
 
+### Versión .exe (sin instalar Node.js)
+
+Si en la computadora de la taquería no quieres instalar Node.js, usa el ejecutable `taqueria-server.exe` (se genera con `build-exe.sh` y se entrega aparte; no está en GitHub porque es un binario):
+
+1. Pon en una misma carpeta de la computadora: `taqueria-server.exe` y `index.html` (el de este repositorio).
+2. Doble clic en `taqueria-server.exe`. La ventana imprime la dirección para esta computadora (`http://localhost:8080/`) y la dirección para tablets y celulares (algo como `http://192.168.1.50:8080/`). Deja esa ventana abierta mientras uses la app.
+3. Abre esa dirección en el navegador de la computadora y en cada tablet (misma Wi-Fi), igual que con `node server.js`.
+
+Notas:
+
+- La primera vez Windows puede mostrar el aviso **"Windows protegió tu PC"**: toca **"Más información"** y luego **"Ejecutar de todas formas"**. Es normal con programas sin firmar.
+- Los datos (`data.json` y su respaldo `data.json.bak`) se crean **junto al exe**, en la misma carpeta. Si mueves la carpeta, llévate también esos archivos para no perder los datos.
+- **Actualizar la app no requiere un exe nuevo:** el servidor lee `index.html` de la carpeta al momento, así que basta con **reemplazar `index.html`** por la versión nueva. Solo si cambia el servidor mismo se genera un exe nuevo.
+- Para compilar el exe (en una computadora con Node.js): `bash build-exe.sh` — deja el archivo en `dist/taqueria-server.exe`.
+
 ### Qué se sincroniza y qué no
 
 - **Se sincroniza** (lo manda la computadora): catálogo, comandas, ventas, caja (apertura y cortes X/Z), dispositivos con sus permisos y nombre de sucursal.
@@ -75,5 +90,5 @@ La app usa los colores de la taquería (verde y blanco, con el emblema circular 
 ## Limitaciones de la v1
 
 - Sin facturación.
-- La sincronización en red requiere la computadora encendida con `node server.js` y todos los dispositivos en la misma Wi-Fi; la impresión de tickets es local en cada dispositivo.
+- La sincronización en red requiere la computadora encendida con `node server.js` (o con `taqueria-server.exe`, ver "Versión .exe") y todos los dispositivos en la misma Wi-Fi; la impresión de tickets es local en cada dispositivo.
 - El "efectivo esperado" de los cortes suma fondo + ventas; no distingue métodos de pago.

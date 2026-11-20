@@ -7,6 +7,9 @@
  * Uso:
  *   node server.js [puerto]          (puerto por defecto: 8080)
  *   PORT=8081 node server.js
+ *   taqueria-server.exe [puerto]     (versión empaquetada para Windows:
+ *                                     sirve index.html y guarda data.json
+ *                                     junto al exe; ver "Versión .exe")
  *
  * Qué hace:
  * - Sirve la app (index.html) en la red local para que la computadora y las
@@ -26,8 +29,14 @@ const fs = require('fs');
 const path = require('path');
 const os = require('os');
 
+/* Carpeta de la app: junto al exe cuando está empaquetado (pkg define
+ * process.pkg), si no junto a este archivo. Así index.html y data.json
+ * viven en disco, al lado del exe, y actualizar la app solo requiere
+ * reemplazar index.html — sin generar un exe nuevo ni tocar los datos. */
+const APP_DIR = (process.pkg ? path.dirname(process.execPath) : __dirname);
+
 const PORT = parseInt(process.env.PORT || process.argv[2] || '8080', 10);
-const DATA_DIR = process.env.PV_DATA_DIR || __dirname;
+const DATA_DIR = process.env.PV_DATA_DIR || APP_DIR;
 const DATA_FILE = path.join(DATA_DIR, 'data.json');
 const BAK_FILE = DATA_FILE + '.bak';
 
@@ -353,7 +362,7 @@ function createServer(opts) {
       /* Archivos de la app */
       if (req.method === 'GET' && STATIC[pathname]) {
         const entry = STATIC[pathname];
-        const filePath = path.join(__dirname, entry.file);
+        const filePath = path.join(APP_DIR, entry.file);
         fs.readFile(filePath, (err, buf) => {
           if (err) { res.writeHead(404); res.end('no encontrado'); return; }
           res.writeHead(200, { 'Content-Type': entry.type, 'Cache-Control': 'no-cache' });
