@@ -388,13 +388,13 @@
   }
   .home-header-text { display: flex; flex-direction: column; align-items: center; gap: 6px; min-width: 0; }
   .home-logo-tile {
-    width: 108px; height: 108px; flex: 0 0 auto;
-    background: #fff; border-radius: 32px;
+    width: 140px; height: 140px; flex: 0 0 auto;
+    background: #fff; border-radius: 42px;
     display: flex; align-items: center; justify-content: center;
     box-shadow: 0 6px 16px rgba(0,0,0,.18);
   }
   .home-logo {
-    width: 92px; height: 92px;
+    width: 124px; height: 124px;
     border-radius: 50%; object-fit: cover;
     background: #fff;
   }
@@ -409,7 +409,7 @@
   }
   .home-pill::before { content: '●'; margin-right: 8px; font-size: 12px; vertical-align: 2px; }
   .home-pill.open { background: rgba(255,255,255,.92); color: #1e7a3c; }
-  .home-cards { display: grid; grid-template-columns: 1fr; gap: 14px; margin-top: 18px; }
+  .home-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 18px; }
   .home-card {
     display: flex; align-items: center; gap: 16px;
     padding: 18px 20px; min-height: 84px;
@@ -446,10 +446,11 @@
   .home-mini:active { background: var(--panel2); }
   .home-mini.open { border-color: var(--accent-l); color: var(--accent-l); }
   .home-mini:disabled, .home-mini.disabled { opacity: .45; cursor: not-allowed; pointer-events: none; }
-  @media (min-width: 640px) {
-    .home-cards { grid-template-columns: 1fr 1fr; }
-    .home-card.primary { grid-column: 1 / -1; }
-  }
+
+  /* ---------- Pantalla de ventas ---------- */
+  .ventas-body { flex: 1; min-height: 0; overflow-y: auto; padding: 14px 18px; }
+  .ventas-foot { padding: 12px 14px; border-top: 1px solid var(--border); }
+  .ventas-foot .btn-danger { width: 100%; }
 
   /* ---------- Comandas ---------- */
   .comandas-body { flex: 1; min-height: 0; display: flex; padding: 14px; overflow: hidden; }
@@ -619,6 +620,10 @@
         <span class="hc-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4a3 3 0 0 1 6 0"/><path d="M9 11h6"/><path d="M9 15h6"/></svg></span>
         <span class="hc-text"><span class="hc-title">Comandas</span><span class="hc-sub">Órdenes en curso <span id="homeComandasCount"></span></span></span>
       </button>
+      <button class="home-card alt2" id="btnHomeVentas">
+        <span class="hc-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2h12v20l-2-1.5L14 22l-2-1.5L10 22l-2-1.5L6 22z"/><path d="M9 7h6"/><path d="M9 11h6"/><path d="M9 15h4"/></svg></span>
+        <span class="hc-text"><span class="hc-title">Ventas</span><span class="hc-sub">Historial de ventas</span></span>
+      </button>
       <button class="home-card alt2" id="btnHomeConfig">
         <span class="hc-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h10"/><path d="M18 7h2"/><circle cx="16" cy="7" r="2"/><path d="M4 17h4"/><path d="M12 17h8"/><circle cx="10" cy="17" r="2"/></svg></span>
         <span class="hc-text"><span class="hc-title">Configuración</span><span class="hc-sub">Productos y precios</span></span>
@@ -634,7 +639,6 @@
   <div class="brand">Punto de venta - Taquería <span>"El Vergel"</span></div>
   <div class="clock" id="clock"></div>
   <div class="spacer"></div>
-  <button class="hbtn" id="btnHistorial">Historial</button>
 </header>
 
 <main>
@@ -694,6 +698,17 @@
   </div>
 </section>
 
+<section id="screenVentas" class="screen hidden">
+  <header class="sheader">
+    <button class="back-btn" id="btnBackVentas"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg> Inicio</button>
+    <span class="stitle">Ventas</span>
+  </header>
+  <div class="ventas-body" id="ventasBody"></div>
+  <div class="ventas-foot">
+    <button class="btn-danger" id="btnLimpiarVentas">Borrar historial</button>
+  </div>
+</section>
+
 <!-- Modal Cobrar -->
 <div class="overlay" id="ovCobrar">
   <div class="modal">
@@ -748,18 +763,6 @@
     <div class="modal-btns">
       <button class="btn-cancel" data-close="ovCorte">Cerrar</button>
       <button class="btn-danger" id="btnCerrarCaja" style="display:none">Cerrar caja</button>
-    </div>
-  </div>
-</div>
-
-<!-- Modal Historial -->
-<div class="overlay" id="ovHistorial">
-  <div class="modal">
-    <h3>Historial de ventas</h3>
-    <div id="historialBody"></div>
-    <div class="modal-btns">
-      <button class="btn-cancel" data-close="ovHistorial">Cerrar</button>
-      <button class="btn-danger" id="btnLimpiarHistorial">Limpiar historial</button>
     </div>
   </div>
 </div>
@@ -1254,6 +1257,16 @@ function openCorteX() {
   showOv('ovCorte');
 }
 function openCorteZ() {
+  const pendientes = comandas.filter(c => c.status === 'activa' || c.status === 'completada');
+  if (pendientes.length) {
+    const activas = pendientes.filter(c => c.status === 'activa').length;
+    const sinPagar = pendientes.filter(c => c.status === 'completada').length;
+    const partes = [];
+    if (activas) partes.push(activas + (activas === 1 ? ' activa' : ' activas'));
+    if (sinPagar) partes.push(sinPagar + (sinPagar === 1 ? ' sin pagar' : ' sin pagar'));
+    toast('No se puede hacer el Corte Z: hay órdenes activas o sin pagar (' + partes.join(', ') + ').');
+    return;
+  }
   const list = sessionSales();
   const opening = session ? session.opening : 0;
   const xs = xCortesForCurrentSession();
@@ -1293,37 +1306,36 @@ document.getElementById('btnCerrarCaja').addEventListener('click', () => {
   toast('Corte Z registrado: ' + fmt(totalSold) + ' vendidos');
 });
 
-/* ================= Historial ================= */
-document.getElementById('btnHistorial').addEventListener('click', () => {
-  const body = document.getElementById('historialBody');
+/* ================= Ventas (pantalla) ================= */
+function renderVentas() {
+  const body = document.getElementById('ventasBody');
   if (!sales.length) {
     body.innerHTML = '<div class="note">Todavía no hay ventas registradas.</div>';
-  } else {
-    let html = '';
-    [...sales].reverse().forEach(v => {
-      const itemsTxt = v.items.map(i => i.qty + '× ' + i.name + (i.nota ? ' (' + i.nota + ')' : '')).join(', ');
-      const clienteTxt = v.cliente ? ' · Cliente: ' + escapeHtml(v.cliente) : '';
-      const detallesTxt = v.detalles ? '<br><span class="st">Detalles: ' + escapeHtml(v.detalles) + '</span>' : '';
-      html += '<div class="sale-item"><span class="sa">' + fmt(v.total) + '</span>' +
-              '<span class="st">' + fmtDateTime(v.datetime) + (v.sessionOpen ? '' : ' · sin sesión') + clienteTxt + '</span><br>' +
-              itemsTxt + detallesTxt + '<br><span class="st">Recibido ' + fmt(v.received) + ' · Cambio ' + fmt(v.change) + '</span></div>';
-    });
-    body.innerHTML = html;
+    return;
   }
-  showOv('ovHistorial');
-});
-document.getElementById('btnLimpiarHistorial').addEventListener('click', () => {
+  let html = '';
+  [...sales].reverse().forEach(v => {
+    const itemsTxt = v.items.map(i => i.qty + '× ' + i.name + (i.nota ? ' (' + i.nota + ')' : '')).join(', ');
+    const clienteTxt = v.cliente ? ' · Cliente: ' + escapeHtml(v.cliente) : '';
+    const detallesTxt = v.detalles ? '<br><span class="st">Detalles: ' + escapeHtml(v.detalles) + '</span>' : '';
+    html += '<div class="sale-item"><span class="sa">' + fmt(v.total) + '</span>' +
+            '<span class="st">' + fmtDateTime(v.datetime) + (v.sessionOpen ? '' : ' · sin sesión') + clienteTxt + '</span><br>' +
+            itemsTxt + detallesTxt + '<br><span class="st">Recibido ' + fmt(v.received) + ' · Cambio ' + fmt(v.change) + '</span></div>';
+  });
+  body.innerHTML = html;
+}
+document.getElementById('btnLimpiarVentas').addEventListener('click', () => {
   if (!sales.length) return;
   if (!confirm('¿Borrar todo el historial de ventas? Esta acción no se puede deshacer.')) return;
   sales = [];
   save(LS_SALES, sales);
-  document.getElementById('historialBody').innerHTML = '<div class="note">Historial borrado.</div>';
+  renderVentas();
   toast('Historial borrado');
 });
 
 /* ================= Navegación entre pantallas (rutas por hash) ================= */
-const ROUTES = { inicio: 'screenHome', pos: 'screenPos', comandas: 'screenComandas', config: 'screenConfig' };
-const SCREEN_HASH = { screenHome: 'inicio', screenPos: 'pos', screenComandas: 'comandas', screenConfig: 'config' };
+const ROUTES = { inicio: 'screenHome', pos: 'screenPos', comandas: 'screenComandas', config: 'screenConfig', ventas: 'screenVentas' };
+const SCREEN_HASH = { screenHome: 'inicio', screenPos: 'pos', screenComandas: 'comandas', screenConfig: 'config', screenVentas: 'ventas' };
 function screenFromHash() {
   const h = (location.hash || '').replace(/^#\/?/, '');
   return ROUTES[h] || 'screenHome';
@@ -1334,6 +1346,7 @@ function showScreen(id, fromHash) {
   document.querySelectorAll('.screen').forEach(s => s.classList.toggle('hidden', s.id !== id));
   if (id === 'screenComandas') renderComandas();
   if (id === 'screenConfig') openConfig();
+  if (id === 'screenVentas') renderVentas();
   if (id === 'screenHome') { updateHomeComandas(); refreshSessionBtns(); }
   if (!fromHash) {
     const target = '#' + (SCREEN_HASH[id] || 'inicio');
@@ -1344,9 +1357,11 @@ window.addEventListener('hashchange', () => { showScreen(screenFromHash(), true)
 document.getElementById('btnHomePos').addEventListener('click', () => showScreen('screenPos'));
 document.getElementById('btnHomeComandas').addEventListener('click', () => showScreen('screenComandas'));
 document.getElementById('btnHomeConfig').addEventListener('click', () => showScreen('screenConfig'));
+document.getElementById('btnHomeVentas').addEventListener('click', () => showScreen('screenVentas'));
 document.getElementById('btnBackPos').addEventListener('click', () => showScreen('screenHome'));
 document.getElementById('btnBackComandas').addEventListener('click', () => showScreen('screenHome'));
 document.getElementById('btnBackConfig').addEventListener('click', () => showScreen('screenHome'));
+document.getElementById('btnBackVentas').addEventListener('click', () => showScreen('screenHome'));
 
 /* Logo del inicio (copia el del encabezado) */
 (function () {
