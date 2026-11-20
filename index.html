@@ -691,13 +691,30 @@
   .printer-toggle { display: flex; align-items: center; gap: 10px; font-size: 15px; font-weight: 700; color: var(--text); cursor: pointer; margin-bottom: 14px; }
   .printer-toggle input { width: 22px; height: 22px; accent-color: var(--accent); }
   .btn-print-test {
+    width: 50%;
+    margin-left: auto;
+    display: block;
+    padding: 10px 14px;
+    border-radius: 12px; border: none;
+    background: var(--accent); color: #fff;
+    font-size: 15px; font-weight: 900;
+    cursor: pointer; min-height: 44px;
+  }
+  .btn-print-test:disabled { opacity: .45; cursor: not-allowed; }
+  .btn-conectar-impresora {
     width: 100%;
     padding: 14px;
     border-radius: 12px; border: none;
     background: var(--accent); color: #fff;
     font-size: 16px; font-weight: 900;
     cursor: pointer; min-height: 52px;
+    margin-bottom: 10px;
   }
+  .printer-status { font-size: 14px; font-weight: 700; color: var(--accent); margin: 0 0 10px; }
+  .printer-status.printer-fallback { color: var(--muted); font-weight: 600; }
+  .printer-hint { font-size: 13px; color: var(--muted); line-height: 1.45; margin: 0 0 12px; }
+  .printer-field input:disabled, .printer-field select:disabled { opacity: .45; cursor: not-allowed; }
+  .printer-toggle:has(input:disabled) { opacity: .45; cursor: not-allowed; }
   /* ---------- Ticket para imprimir ---------- */
   #printTicket { display: none; }
   @media print {
@@ -714,12 +731,14 @@
   #printTicket .pt-total { font-size: 15px; font-weight: 900; }
   #printTicket .pt-foot { text-align: center; font-size: 12px; margin-top: 8px; }
   .btn-save-config {
-    width: 100%;
-    padding: 16px;
+    width: 50%;
+    margin-left: auto;
+    display: block;
+    padding: 10px 14px;
     border-radius: 12px; border: none;
     background: var(--accent); color: #fff;
-    font-size: 18px; font-weight: 900;
-    cursor: pointer; min-height: 56px;
+    font-size: 15px; font-weight: 900;
+    cursor: pointer; min-height: 44px;
   }
 
   /* ---------- Botón Comanda ---------- */
@@ -1735,6 +1754,21 @@ function renderDevices() {
   hP.textContent = 'Impresora de tickets';
   secP.appendChild(hP);
 
+  const btnConectar = document.createElement('button');
+  btnConectar.type = 'button';
+  btnConectar.className = 'btn-conectar-impresora';
+  btnConectar.textContent = 'Buscar impresora';
+  secP.appendChild(btnConectar);
+
+  const printerStatus = document.createElement('div');
+  printerStatus.className = 'printer-status';
+  secP.appendChild(printerStatus);
+
+  const printerHint = document.createElement('div');
+  printerHint.className = 'printer-hint';
+  printerHint.textContent = 'Conecta una impresora para habilitar estas opciones.';
+  secP.appendChild(printerHint);
+
   const fNombre = document.createElement('div');
   fNombre.className = 'printer-field';
   const lblNombre = document.createElement('label');
@@ -1744,7 +1778,6 @@ function renderDevices() {
   inpNombre.type = 'text';
   inpNombre.placeholder = 'Ej. TM-T20 (opcional)';
   inpNombre.value = printerSettings.nombre || '';
-  inpNombre.addEventListener('input', () => { printerSettings.nombre = inpNombre.value; savePrinter(); });
   fNombre.appendChild(inpNombre);
   secP.appendChild(fNombre);
 
@@ -1780,6 +1813,61 @@ function renderDevices() {
   btnTest.textContent = 'Imprimir ticket de prueba';
   btnTest.addEventListener('click', () => printSampleTicket());
   secP.appendChild(btnTest);
+
+  function refreshPrinterControls(msg, isFallback) {
+    const hasPrinter = !!(printerSettings.nombre && String(printerSettings.nombre).trim());
+    selAncho.disabled = !hasPrinter;
+    chkAuto.disabled = !hasPrinter;
+    btnTest.disabled = !hasPrinter;
+    lblAuto.style.opacity = hasPrinter ? '' : '.45';
+    printerHint.style.display = hasPrinter ? 'none' : '';
+    if (msg !== undefined) {
+      printerStatus.textContent = msg;
+      printerStatus.classList.toggle('printer-fallback', !!isFallback);
+    } else if (hasPrinter) {
+      printerStatus.textContent = (printerSettings.fuente === 'bluetooth' ? 'Impresora conectada: ' : 'Impresora: ') + printerSettings.nombre;
+      printerStatus.classList.remove('printer-fallback');
+    } else {
+      printerStatus.textContent = '';
+      printerStatus.classList.remove('printer-fallback');
+    }
+  }
+
+  async function connectPrinter() {
+    if (!navigator.bluetooth || typeof navigator.bluetooth.requestDevice !== 'function') {
+      refreshPrinterControls('Tu navegador no permite detectar la impresora automáticamente; escribe el nombre manualmente.', true);
+      return;
+    }
+    try {
+      const device = await navigator.bluetooth.requestDevice({
+        acceptAllDevices: true,
+        optionalServices: ['battery_service', 'device_information', 'generic_access', 'generic_attribute', 'serial_port']
+      });
+      const name = device && device.name ? String(device.name).trim() : '';
+      if (!name) {
+        refreshPrinterControls('La impresora no envió su nombre; escríbelo manualmente.', true);
+        return;
+      }
+      printerSettings.nombre = name;
+      printerSettings.fuente = 'bluetooth';
+      savePrinter();
+      inpNombre.value = name;
+      refreshPrinterControls();
+    } catch (e) {
+      if (e && e.name === 'NotFoundError') return; // usuario canceló: conservar valor anterior
+      refreshPrinterControls('No se pudo conectar la impresora; escribe el nombre manualmente.', true);
+    }
+  }
+
+  btnConectar.addEventListener('click', connectPrinter);
+  inpNombre.addEventListener('input', () => {
+    printerSettings.nombre = inpNombre.value;
+    printerSettings.fuente = 'manual';
+    savePrinter();
+    refreshPrinterControls();
+  });
+  refreshPrinterControls();
+
   body.appendChild(secP);
 
   /* --- Dispositivos conectados --- */
