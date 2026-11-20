@@ -467,6 +467,8 @@
   .vn-btn { border: 1px solid var(--border); background: var(--panel); color: var(--accent); font-size: 24px; font-weight: 800; width: 44px; height: 44px; border-radius: 10px; cursor: pointer; line-height: 1; padding: 0; }
   .vn-btn:disabled { opacity: .35; cursor: not-allowed; }
   .vn-label { font-size: 16px; font-weight: 800; color: var(--accent-d); min-width: 200px; text-align: center; }
+  .vn-date-wrap { position: relative; display: inline-flex; align-items: center; }
+  .vn-date-input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; border: none; padding: 0; margin: 0; background: transparent; color: transparent; }
   .ventas-day { font-size: 15px; font-weight: 800; color: var(--accent); margin: 6px 0 10px; padding-bottom: 6px; border-bottom: 2px solid var(--border); }
   .venta-card {
     background: var(--panel);
@@ -911,14 +913,17 @@
     <span class="stitle">Ventas</span>
   </header>
   <div class="ventas-wrap">
+    <div class="ventas-daynav">
+      <button class="vn-btn" id="btnVentasPrev" aria-label="Día anterior">‹</button>
+      <span class="vn-date-wrap">
+        <span class="vn-label" id="ventasDayLabel">Hoy</span>
+        <input type="date" id="inpVentasFecha" class="vn-date-input" aria-label="Elegir día">
+      </span>
+      <button class="vn-btn" id="btnVentasNext" aria-label="Día siguiente">›</button>
+    </div>
     <div class="ventas-summary">
       <div class="vs-card"><span class="vs-label">Total vendido</span><span class="vs-value" id="ventasTotal">$0.00</span></div>
       <div class="vs-card"><span class="vs-label">Ventas</span><span class="vs-value" id="ventasCount">0</span></div>
-    </div>
-    <div class="ventas-daynav">
-      <button class="vn-btn" id="btnVentasPrev" aria-label="Día anterior">‹</button>
-      <span class="vn-label" id="ventasDayLabel">Hoy</span>
-      <button class="vn-btn" id="btnVentasNext" aria-label="Día siguiente">›</button>
     </div>
     <div class="ventas-body" id="ventasBody"></div>
     <div class="ventas-actions">
@@ -1624,6 +1629,16 @@ function fmtDayLabel(d) {
   const isToday = dayKeyOf(d.toISOString()) === dayKeyOf(new Date().toISOString());
   return isToday ? 'Hoy — ' + dateStr : DIAS_SEMANA[d.getDay()] + ' ' + dateStr;
 }
+function fmtDateInputValue(d) {
+  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+}
+function syncVentasDateInput() {
+  const inp = document.getElementById('inpVentasFecha');
+  if (!inp) return;
+  const today = startOfDay(new Date());
+  inp.max = fmtDateInputValue(today);
+  inp.value = fmtDateInputValue(ventasDay || today);
+}
 
 /* ================= Ventas (pantalla) ================= */
 function renderVentas() {
@@ -1639,6 +1654,7 @@ function renderVentas() {
   if (countEl) countEl.textContent = String(daySales.length);
   const labelEl = document.getElementById('ventasDayLabel');
   if (labelEl) labelEl.textContent = fmtDayLabel(ventasDay);
+  syncVentasDateInput();
   const btnNext = document.getElementById('btnVentasNext');
   if (btnNext) btnNext.disabled = isToday;
   if (!daySales.length) {
@@ -1680,6 +1696,17 @@ document.getElementById('btnVentasNext').addEventListener('click', () => {
   d.setDate(d.getDate() + 1);
   if (startOfDay(d).getTime() > today.getTime()) return;
   ventasDay = startOfDay(d);
+  renderVentas();
+});
+document.getElementById('inpVentasFecha').addEventListener('change', () => {
+  const inp = document.getElementById('inpVentasFecha');
+  if (!inp || !inp.value) return;
+  const parts = inp.value.split('-').map(Number);
+  if (parts.length !== 3 || parts.some(isNaN)) return;
+  const d = startOfDay(new Date(parts[0], parts[1] - 1, parts[2]));
+  const today = startOfDay(new Date());
+  if (d.getTime() > today.getTime()) { syncVentasDateInput(); return; }
+  ventasDay = d;
   renderVentas();
 });
 document.getElementById('btnLimpiarVentas').addEventListener('click', () => {
