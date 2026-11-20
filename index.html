@@ -324,42 +324,82 @@
   /* ---------- Pantalla de inicio ---------- */
   #screenHome { overflow-y: auto; }
   .home-wrap {
-    width: 100%; max-width: 520px; margin: auto;
-    padding: 28px 18px;
-    display: flex; flex-direction: column; gap: 14px;
+    width: 100%; max-width: 680px; margin: auto;
+    padding: 32px 18px 28px;
+    display: flex; flex-direction: column; gap: 22px;
+  }
+  .home-head {
+    display: flex; flex-direction: column; align-items: center; gap: 12px;
+    text-align: center;
+  }
+  .home-logo-tile {
+    width: 96px; height: 96px;
+    background: #fff; border-radius: 26px;
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 10px 26px rgba(35,70,30,.18);
+    border: 1px solid var(--border);
   }
   .home-logo {
-    width: 110px; height: 110px;
+    width: 72px; height: 72px;
     border-radius: 50%; object-fit: cover;
-    border: 3px solid var(--accent);
     background: #fff;
-    align-self: center;
   }
-  .home-title { text-align: center; font-size: 24px; font-weight: 900; color: var(--accent); }
+  .home-title { font-size: 26px; font-weight: 900; color: var(--accent); line-height: 1.2; }
   .home-title span { color: var(--accent-l); }
-  .home-caja { text-align: center; color: var(--muted); font-weight: 700; font-size: 15px; }
-  .home-btn {
-    padding: 18px;
-    font-size: 20px; font-weight: 900;
-    border-radius: 14px; border: none;
-    background: var(--accent); color: #fff;
-    cursor: pointer; min-height: 64px;
+  .home-pill {
+    padding: 7px 16px; border-radius: 999px;
+    font-size: 13px; font-weight: 800;
+    background: #e8ece9; color: #6b7a6e;
   }
-  .home-btn:active { background: var(--accent-d); }
-  .home-btn.amber { background: var(--pay); color: var(--pay-text); }
-  .home-btn.small {
-    font-size: 16px; min-height: 54px;
-    background: var(--panel); color: var(--accent);
+  .home-pill::before { content: '●'; margin-right: 6px; font-size: 10px; vertical-align: 1px; }
+  .home-pill.open { background: #e2f3e8; color: #1e7a3c; }
+  .home-cards { display: grid; grid-template-columns: 1fr; gap: 14px; }
+  .home-card {
+    display: flex; align-items: center; gap: 16px;
+    padding: 18px 20px; min-height: 84px;
+    border-radius: 20px; border: none;
+    text-align: left; cursor: pointer;
+    color: #fff;
+    box-shadow: 0 8px 20px rgba(35,70,30,.20);
+    transition: transform .08s ease, box-shadow .08s ease;
+  }
+  .home-card:active { transform: scale(.98); box-shadow: 0 4px 12px rgba(35,70,30,.20); }
+  .home-card.primary { background: linear-gradient(135deg, #1b3a17 0%, #2e7d46 100%); }
+  .home-card.alt { background: linear-gradient(135deg, #2e7d46 0%, #43a047 100%); }
+  .home-card.alt2 { background: linear-gradient(135deg, #276749 0%, #38a169 100%); }
+  .hc-icon {
+    width: 52px; height: 52px; border-radius: 15px;
+    background: rgba(255,255,255,.18);
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .hc-icon svg { width: 28px; height: 28px; }
+  .hc-text { display: flex; flex-direction: column; min-width: 0; }
+  .hc-title { font-size: 20px; font-weight: 900; line-height: 1.15; }
+  .hc-sub { font-size: 13px; opacity: .88; margin-top: 3px; }
+  .home-row { display: flex; gap: 12px; }
+  .home-mini {
+    flex: 1; min-height: 58px;
+    background: #fff; color: var(--accent);
     border: 2px solid var(--accent);
+    border-radius: 16px;
+    font-size: 15px; font-weight: 800;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(35,70,30,.10);
   }
-  .home-btn.small.open { border-color: var(--accent-l); color: var(--accent-l); }
-  .home-row { display: flex; gap: 10px; }
-  .home-row .home-btn { flex: 1; }
+  .home-mini:active { background: var(--panel2); }
+  .home-mini.open { border-color: var(--accent-l); color: var(--accent-l); }
+  @media (min-width: 640px) {
+    .home-cards { grid-template-columns: 1fr 1fr; }
+    .home-card.primary { grid-column: 1 / -1; }
+  }
 
   /* ---------- Comandas ---------- */
-  .comandas-body { flex: 1; overflow-y: auto; padding: 14px; }
-  .comandas-body h2 { font-size: 19px; color: var(--accent); margin: 16px 0 10px; }
-  .comandas-body h2:first-child { margin-top: 0; }
+  .comandas-body { flex: 1; min-height: 0; display: flex; padding: 14px; overflow: hidden; }
+  .comandas-col { flex: 1; min-width: 0; overflow-y: auto; padding: 0 12px; }
+  .comandas-col:first-child { padding-left: 0; }
+  .comandas-col:last-child { padding-right: 0; border-left: 2px solid var(--border); }
+  .comandas-col h2 { font-size: 19px; color: var(--accent); margin: 0 0 10px; }
   .comanda-card {
     background: var(--panel);
     border: 1px solid var(--border);
@@ -390,18 +430,37 @@
     margin-bottom: 8px;
   }
   .cfg-row input[type="text"] {
-    flex: 1; min-width: 0;
+    flex: 1 1 auto; min-width: 0;
     font-size: 15px; padding: 9px 10px;
     border-radius: 8px; border: 1px solid var(--border);
     color: var(--text);
   }
   .cfg-row input[type="number"] {
-    width: 110px;
+    flex: 0 0 100px; width: 100px;
     font-size: 15px; padding: 9px 10px;
     border-radius: 8px; border: 1px solid var(--border);
     color: var(--text);
     font-variant-numeric: tabular-nums;
   }
+  .cfg-del {
+    flex: 0 0 auto;
+    width: 38px; height: 38px;
+    border-radius: 8px; border: 1px solid var(--border);
+    background: #fdecea; color: #c62828;
+    font-size: 18px; font-weight: 800; line-height: 1;
+    cursor: pointer;
+  }
+  .cfg-del:active { background: #fbd5d1; }
+  .cfg-add {
+    display: block; width: 100%;
+    padding: 10px; margin: 2px 0 12px;
+    border-radius: 10px; border: 1px dashed var(--border);
+    background: var(--panel2); color: var(--accent);
+    font-size: 14px; font-weight: 800;
+    cursor: pointer;
+  }
+  .cfg-add:active { background: #dcebe1; }
+  .cfg-row.invalid input { border-color: #c62828; background: #fff5f5; }
   .config-foot { padding: 12px 14px; border-top: 1px solid var(--border); }
   .btn-save-config {
     width: 100%;
@@ -430,6 +489,9 @@
     main { flex-direction: column; }
     .ticket { width: 100%; flex: 1; min-height: 0; }
     .sec-grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
+    .comandas-body { flex-direction: column; overflow-y: auto; }
+    .comandas-col { overflow-y: visible; padding: 0; }
+    .comandas-col:last-child { border-left: none; border-top: 2px solid var(--border); padding-top: 12px; margin-top: 12px; }
   }
 </style>
 </head>
@@ -437,15 +499,28 @@
 
 <section id="screenHome" class="screen">
   <div class="home-wrap">
-    <img class="home-logo" id="homeLogo" alt="Taquería El Vergel">
-    <div class="home-title">Punto de venta - Taquería <span>"El Vergel"</span></div>
-    <div class="home-caja" id="homeCajaState">Caja cerrada</div>
-    <button class="home-btn amber" id="btnHomePos">Punto de venta</button>
-    <button class="home-btn" id="btnHomeComandas">Comandas <span id="homeComandasCount"></span></button>
-    <button class="home-btn" id="btnHomeConfig">Configuración</button>
+    <div class="home-head">
+      <div class="home-logo-tile"><img class="home-logo" id="homeLogo" alt="Taquería El Vergel"></div>
+      <div class="home-title">Taquería <span>"El Vergel"</span></div>
+      <div class="home-pill" id="homeCajaState">Caja cerrada</div>
+    </div>
+    <div class="home-cards">
+      <button class="home-card primary" id="btnHomePos">
+        <span class="hc-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M3 10h18"/><path d="M7 15h4"/><path d="M15 15h2"/></svg></span>
+        <span class="hc-text"><span class="hc-title">Punto de venta</span><span class="hc-sub">Vender y cobrar</span></span>
+      </button>
+      <button class="home-card alt" id="btnHomeComandas">
+        <span class="hc-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4a3 3 0 0 1 6 0"/><path d="M9 11h6"/><path d="M9 15h6"/></svg></span>
+        <span class="hc-text"><span class="hc-title">Comandas</span><span class="hc-sub">Órdenes en curso <span id="homeComandasCount"></span></span></span>
+      </button>
+      <button class="home-card alt2" id="btnHomeConfig">
+        <span class="hc-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h10"/><path d="M18 7h2"/><circle cx="16" cy="7" r="2"/><path d="M4 17h4"/><path d="M12 17h8"/><circle cx="10" cy="17" r="2"/></svg></span>
+        <span class="hc-text"><span class="hc-title">Configuración</span><span class="hc-sub">Productos y precios</span></span>
+      </button>
+    </div>
     <div class="home-row">
-      <button class="home-btn small" id="btnApertura">Apertura de caja</button>
-      <button class="home-btn small" id="btnCorte">Corte de caja</button>
+      <button class="home-mini" id="btnApertura"><span id="btnAperturaLabel">Apertura de caja</span></button>
+      <button class="home-mini" id="btnCorte">Corte de caja</button>
     </div>
   </div>
 </section>
@@ -490,10 +565,14 @@
     <span class="stitle">Comandas</span>
   </header>
   <div class="comandas-body">
-    <h2>Activas</h2>
-    <div id="comandasActivas"></div>
-    <h2>Completadas</h2>
-    <div id="comandasCompletadas"></div>
+    <div class="comandas-col">
+      <h2>Activas</h2>
+      <div id="comandasActivas"></div>
+    </div>
+    <div class="comandas-col">
+      <h2>Completadas</h2>
+      <div id="comandasCompletadas"></div>
+    </div>
   </div>
 </section>
 
@@ -746,6 +825,7 @@ function renderTicket() {
     box.innerHTML = '';
     ids.forEach(id => {
       const p = productById(id);
+      if (!p) return; // producto eliminado desde Configuración
       const row = document.createElement('div');
       row.className = 'titem';
       row.innerHTML =
@@ -783,7 +863,7 @@ document.getElementById('btnVaciar').addEventListener('click', () => {
   ticket = {}; refreshAll();
 });
 document.getElementById('btnComanda').addEventListener('click', () => {
-  const ids = Object.keys(ticket).filter(id => ticket[id] > 0);
+  const ids = Object.keys(ticket).filter(id => ticket[id] > 0 && productById(id));
   if (!ids.length) return;
   const items = ids.map(id => {
     const p = productById(id);
@@ -862,7 +942,7 @@ document.getElementById('btnConfirmarCobro').addEventListener('click', () => {
     comandas = comandas.filter(c => c.id !== payCtx.comanda.id);
     save(LS_COMANDAS, comandas);
   } else {
-    items = Object.keys(ticket).filter(id => ticket[id] > 0).map(id => {
+    items = Object.keys(ticket).filter(id => ticket[id] > 0 && productById(id)).map(id => {
       const p = productById(id);
       return { id: p.id, name: p.name, price: p.price, qty: ticket[id], subtotal: p.price * ticket[id] };
     });
@@ -889,8 +969,10 @@ document.getElementById('btnConfirmarCobro').addEventListener('click', () => {
 function refreshSessionBtns() {
   const b = document.getElementById('btnApertura');
   b.classList.toggle('open', !!session);
-  b.textContent = session ? 'Caja abierta' : 'Apertura de caja';
-  document.getElementById('homeCajaState').textContent = session ? 'Caja abierta' : 'Caja cerrada';
+  document.getElementById('btnAperturaLabel').textContent = session ? 'Caja abierta' : 'Apertura de caja';
+  const pill = document.getElementById('homeCajaState');
+  pill.classList.toggle('open', !!session);
+  pill.textContent = session ? 'Caja abierta' : 'Caja cerrada';
 }
 document.getElementById('btnApertura').addEventListener('click', () => {
   if (session) {
@@ -998,7 +1080,7 @@ document.getElementById('btnLimpiarHistorial').addEventListener('click', () => {
 function showScreen(id) {
   document.querySelectorAll('.screen').forEach(s => s.classList.toggle('hidden', s.id !== id));
   if (id === 'screenComandas') renderComandas();
-  if (id === 'screenConfig') renderConfig();
+  if (id === 'screenConfig') openConfig();
   if (id === 'screenHome') { updateHomeComandas(); refreshSessionBtns(); }
 }
 document.getElementById('btnHomePos').addEventListener('click', () => showScreen('screenPos'));
@@ -1060,10 +1142,29 @@ function renderComandas() {
 }
 
 /* ================= Configuración ================= */
+let configDraft = null;      // copia de trabajo del catálogo (se aplica al guardar)
+let configRowByPid = new Map();
+const CFG_PALETTE = ['#1e5631', '#276749', '#2f855a', '#38a169', '#43a047', '#558b2f', '#2e7d32', '#33691e'];
+let cfgNewSeq = 0;
+
+function cfgFindProduct(pid) {
+  for (const cat of configDraft) for (const sec of cat.sections) for (const p of sec.items) if (p.id === pid) return p;
+  return null;
+}
+function cfgNewId() {
+  let id;
+  do { id = 'nuevo-' + Date.now().toString(36) + '-' + (++cfgNewSeq); } while (cfgFindProduct(id));
+  return id;
+}
+function openConfig() {
+  configDraft = JSON.parse(JSON.stringify(catalog));
+  renderConfig();
+}
 function renderConfig() {
+  configRowByPid = new Map();
   const body = document.getElementById('configBody');
   body.innerHTML = '';
-  catalog.forEach(cat => {
+  configDraft.forEach(cat => {
     const h = document.createElement('h2');
     h.textContent = cat.label;
     body.appendChild(h);
@@ -1081,33 +1182,88 @@ function renderConfig() {
         nameIn.value = p.name;
         nameIn.dataset.pid = p.id;
         nameIn.dataset.field = 'name';
+        nameIn.addEventListener('input', () => {
+          const prod = cfgFindProduct(p.id);
+          if (prod) prod.name = nameIn.value;
+          row.classList.remove('invalid');
+        });
         const priceIn = document.createElement('input');
         priceIn.type = 'number';
         priceIn.min = '0';
         priceIn.step = '0.01';
-        priceIn.value = p.price;
+        priceIn.value = (p.price === '' || p.price == null) ? '' : p.price;
         priceIn.dataset.pid = p.id;
         priceIn.dataset.field = 'price';
+        priceIn.addEventListener('input', () => {
+          const prod = cfgFindProduct(p.id);
+          if (prod) prod.price = priceIn.value;
+          row.classList.remove('invalid');
+        });
+        const delBtn = document.createElement('button');
+        delBtn.className = 'cfg-del';
+        delBtn.textContent = '×';
+        delBtn.dataset.pid = p.id;
+        delBtn.addEventListener('click', () => {
+          const prod = cfgFindProduct(p.id);
+          const nm = prod ? (prod.name.trim() || p.name) : p.name;
+          if (!confirm('¿Eliminar "' + nm + '"?')) return;
+          for (const sec2 of cat.sections) sec2.items = sec2.items.filter(x => x.id !== p.id);
+          renderConfig();
+        });
         row.appendChild(nameIn);
         row.appendChild(priceIn);
+        row.appendChild(delBtn);
+        configRowByPid.set(p.id, row);
         body.appendChild(row);
       });
+      const addBtn = document.createElement('button');
+      addBtn.className = 'cfg-add';
+      addBtn.textContent = '＋ Agregar producto';
+      addBtn.dataset.cat = cat.id;
+      addBtn.dataset.sec = sec.id;
+      addBtn.addEventListener('click', () => {
+        const count = sec.items.length;
+        sec.items.push({ id: cfgNewId(), name: '', price: '', color: CFG_PALETTE[count % CFG_PALETTE.length] });
+        renderConfig();
+        const newRow = configRowByPid.get(sec.items[sec.items.length - 1].id);
+        const firstIn = newRow ? newRow.children[0] : null;
+        if (firstIn && firstIn.focus) firstIn.focus();
+      });
+      body.appendChild(addBtn);
     });
   });
 }
 document.getElementById('btnGuardarConfig').addEventListener('click', () => {
-  const next = JSON.parse(JSON.stringify(catalog));
-  document.querySelectorAll('#configBody input').forEach(inp => {
-    const pid = inp.dataset.pid, field = inp.dataset.field;
-    for (const cat of next) for (const sec of cat.sections) for (const p of sec.items) {
-      if (p.id !== pid) continue;
-      if (field === 'name') { const v = inp.value.trim(); if (v) p.name = v; }
-      else { const v = parseFloat(inp.value); if (!isNaN(v) && v >= 0) p.price = v; }
+  // Validar: nombre no vacío y precio > 0
+  let firstInvalidRow = null;
+  configRowByPid.forEach((row, pid) => row.classList.remove('invalid'));
+  for (const cat of configDraft) for (const sec of cat.sections) for (const p of sec.items) {
+    const okName = String(p.name || '').trim().length > 0;
+    const pv = parseFloat(p.price);
+    const okPrice = !isNaN(pv) && pv > 0;
+    if (!okName || !okPrice) {
+      const row = configRowByPid.get(p.id);
+      if (row) {
+        row.classList.add('invalid');
+        if (!firstInvalidRow) firstInvalidRow = row;
+      }
     }
-  });
-  catalog = next;
+  }
+  if (firstInvalidRow) {
+    if (firstInvalidRow.scrollIntoView) firstInvalidRow.scrollIntoView({ block: 'center' });
+    toast('Revisa los campos en rojo: nombre y precio (> 0)');
+    return;
+  }
+  // Normalizar y guardar
+  for (const cat of configDraft) for (const sec of cat.sections) for (const p of sec.items) {
+    p.name = String(p.name).trim();
+    p.price = parseFloat(p.price);
+  }
+  catalog = configDraft;
   save(LS_CATALOG, catalog);
-  if (!catalog.find(c => c.id === activeCat)) activeCat = catalog[0].id;
+  // Quitar del ticket productos que ya no existen
+  Object.keys(ticket).forEach(id => { if (!productById(id)) delete ticket[id]; });
+  if (!catalog.find(c => c.id === activeCat)) activeCat = catalog[0] ? catalog[0].id : null;
   renderTabs(); renderGrid(); renderTicket();
   toast('Configuración guardada');
 });
