@@ -5,9 +5,9 @@ Punto de venta web para una taquería: toca los productos para armar el ticket, 
 ## Cómo usarlo
 
 1. Abre `index.html` en cualquier navegador (Windows, Android, tablet o celular). No necesita instalación ni internet.
-2. **Pantalla de inicio:** al abrir el sistema verás el inicio con el emblema de El Vergel en una tarjeta blanca, el estado de la caja como una píldora (verde si está abierta) y tarjetas grandes con degradados verdes: **Punto de venta**, **Comandas** (muestra cuántas hay activas), **Configuración**, y abajo dos botones secundarios de **Apertura de caja** y **Corte de caja**.
+2. **Pantalla de inicio:** al abrir el sistema verás el inicio con el emblema de El Vergel en una tarjeta blanca, el estado de la caja como una píldora (verde si está abierta) y tarjetas grandes con degradados verdes: **Punto de venta**, **Comandas** (muestra cuántas hay activas), **Configuración**, y abajo dos botones secundarios de **Apertura de caja** y **Corte de caja**. Cada pantalla tiene su propia dirección (la página termina en `#inicio`, `#pos`, `#comandas` o `#config`): si recargas la página te quedas en la pantalla donde estabas, y el botón "atrás" del navegador regresa a la pantalla anterior.
 3. **Apertura de caja:** en el inicio, toca "Apertura de caja", captura el fondo inicial (efectivo con el que empieza la caja) y toca "Iniciar caja".
-4. **Vender:** entra a "Punto de venta" y toca los cuadritos de productos para agregarlos al ticket. Hay tres pestañas: **Tacos** (con dos secciones: Órdenes y Taco individual, mismas carnes), **Bebidas** (Refrescos y Aguas) y **Otros**. En el ticket puedes subir o bajar cantidades con − / +, quitar un producto con ×, o vaciar todo con "Vaciar".
+4. **Vender:** entra a "Punto de venta" y toca los cuadritos de productos para agregarlos al ticket. Hay tres pestañas: **Tacos** (con dos secciones: Órdenes y Taco individual, mismas carnes), **Bebidas** (Refrescos y Aguas) y **Otros**. En el ticket puedes subir o bajar cantidades con − / +, quitar un producto con ×, o vaciar todo con "Vaciar". El ticket se guarda en el navegador: si recargas la página a la mitad de una venta, el ticket (y la pestaña activa) siguen ahí.
 5. **Comanda:** toca "Comanda" para guardar el ticket como una comanda activa (la orden que está preparando el taquero) y limpiar el ticket. En la pantalla **Comandas** verás dos columnas divididas verticalmente: **Activas** (izquierda) y **Completadas** (derecha); en pantallas angostas se apilan una sobre otra. Toca "Entregada" cuando el cliente recibe su orden (pasa a Completadas) y "Pagada" cuando paga: se abre el mismo modal de cobro y la venta queda registrada.
 6. **Cobrar:** toca "Cobrar", captura cuánto te dio el cliente en "Recibido" (o usa los botones rápidos, incluido "Exacto"). El "Cambio" se calcula solo. Toca "Confirmar cobro" para registrar la venta y limpiar el ticket.
 7. **Corte de caja:** en el inicio, toca "Corte de caja" para ver el resumen del periodo: fondo inicial, número de ventas, total vendido, efectivo esperado (fondo + vendido) y la lista de ventas. Toca "Cerrar caja" para cerrar el periodo; después puedes hacer una nueva apertura.
@@ -29,7 +29,7 @@ La app usa los colores de la taquería (verde y blanco, con el emblema circular 
 ## Cómo funciona la caja
 
 - Las ventas se pueden registrar con o sin caja abierta. El corte resume las ventas desde la última apertura (o desde el último corte si no hay caja abierta) y marca en el historial las ventas hechas "sin sesión".
-- Los datos (ventas, sesión abierta, cortes, comandas y cambios de catálogo) se guardan en el `localStorage` del navegador: sobreviven al cerrar la página, pero **son por navegador/dispositivo** — no se sincronizan entre computadoras ni celulares, y se borran si se limpia el historial del navegador.
+- Los datos (ventas, sesión abierta, cortes, comandas, cambios de catálogo, el ticket en curso y la pestaña activa) se guardan en el `localStorage` del navegador: sobreviven al cerrar la página, pero **son por navegador/dispositivo** — no se sincronizan entre computadoras ni celulares, y se borran si se limpia el historial del navegador.
 
 ## Publicar en GitHub Pages
 

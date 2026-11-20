@@ -745,12 +745,16 @@ const LS_LASTCUT = 'pvtaqueria_lastCorteIndex';
 const LS_COMANDAS = 'pvtaqueria_comandas';
 const LS_COMANDA_SEQ = 'pvtaqueria_comandaSeq';
 const LS_CATALOG = 'pvtaqueria_catalog';
+const LS_TICKET  = 'pvtaqueria_ticket';
+const LS_TAB     = 'pvtaqueria_tab';
 
 let catalog = load(LS_CATALOG, null);
 if (!catalog) catalog = JSON.parse(JSON.stringify(CATALOG_DEFAULTS));
 
-let ticket = {};              // productId -> qty
-let activeCat = catalog[0].id;
+let ticket = load(LS_TICKET, {});   // productId -> qty (persiste entre recargas)
+Object.keys(ticket).forEach(id => { if (!productById(id) || !(ticket[id] > 0)) delete ticket[id]; });
+let activeCat = load(LS_TAB, null);
+if (!catalog.find(c => c.id === activeCat)) activeCat = catalog[0] ? catalog[0].id : null;
 let comandas = load(LS_COMANDAS, []);
 let comandaSeq = load(LS_COMANDA_SEQ, 0);
 let sales = load(LS_SALES, []);
@@ -810,7 +814,7 @@ function renderTabs() {
     const b = document.createElement('button');
     b.className = 'tab' + (cat.id === activeCat ? ' active' : '');
     b.textContent = cat.label;
-    b.addEventListener('click', () => { activeCat = cat.id; renderTabs(); renderGrid(); });
+    b.addEventListener('click', () => { activeCat = cat.id; save(LS_TAB, activeCat); renderTabs(); renderGrid(); });
     tabs.appendChild(b);
   });
 }
@@ -893,7 +897,11 @@ function renderTicket() {
   document.getElementById('btnCobrar').disabled = total <= 0;
   document.getElementById('btnComanda').disabled = total <= 0;
 }
-function refreshAll() { renderGrid(); renderTicket(); }
+function saveTicket() {
+  Object.keys(ticket).forEach(id => { if (!productById(id) || !(ticket[id] > 0)) delete ticket[id]; });
+  save(LS_TICKET, ticket);
+}
+function refreshAll() { renderGrid(); renderTicket(); saveTicket(); }
 function addToTicket(id) { ticket[id] = (ticket[id] || 0) + 1; refreshAll(); }
 function changeQty(id, delta) {
   ticket[id] = (ticket[id] || 0) + delta;
@@ -1118,13 +1126,26 @@ document.getElementById('btnLimpiarHistorial').addEventListener('click', () => {
   toast('Historial borrado');
 });
 
-/* ================= Navegación entre pantallas ================= */
-function showScreen(id) {
+/* ================= Navegación entre pantallas (rutas por hash) ================= */
+const ROUTES = { inicio: 'screenHome', pos: 'screenPos', comandas: 'screenComandas', config: 'screenConfig' };
+const SCREEN_HASH = { screenHome: 'inicio', screenPos: 'pos', screenComandas: 'comandas', screenConfig: 'config' };
+function screenFromHash() {
+  const h = (location.hash || '').replace(/^#\/?/, '');
+  return ROUTES[h] || 'screenHome';
+}
+function showScreen(id, fromHash) {
+  document.querySelectorAll('.overlay.show').forEach(ov => ov.classList.remove('show'));
+  payCtx = null;
   document.querySelectorAll('.screen').forEach(s => s.classList.toggle('hidden', s.id !== id));
   if (id === 'screenComandas') renderComandas();
   if (id === 'screenConfig') openConfig();
   if (id === 'screenHome') { updateHomeComandas(); refreshSessionBtns(); }
+  if (!fromHash) {
+    const target = '#' + (SCREEN_HASH[id] || 'inicio');
+    if (location.hash !== target) location.hash = target;
+  }
 }
+window.addEventListener('hashchange', () => { showScreen(screenFromHash(), true); });
 document.getElementById('btnHomePos').addEventListener('click', () => showScreen('screenPos'));
 document.getElementById('btnHomeComandas').addEventListener('click', () => showScreen('screenComandas'));
 document.getElementById('btnHomeConfig').addEventListener('click', () => showScreen('screenConfig'));
@@ -1319,6 +1340,7 @@ document.getElementById('btnGuardarConfig').addEventListener('click', () => {
   save(LS_CATALOG, catalog);
   // Quitar del ticket productos que ya no existen
   Object.keys(ticket).forEach(id => { if (!productById(id)) delete ticket[id]; });
+  saveTicket();
   if (!catalog.find(c => c.id === activeCat)) activeCat = catalog[0] ? catalog[0].id : null;
   renderTabs(); renderGrid(); renderTicket();
   toast('Configuración guardada');
@@ -1330,7 +1352,7 @@ renderGrid();
 renderTicket();
 refreshSessionBtns();
 updateHomeComandas();
-showScreen('screenHome');
+showScreen(screenFromHash());
 </script>
 </body>
 </html>
