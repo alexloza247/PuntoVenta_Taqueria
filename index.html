@@ -141,7 +141,7 @@
 
   /* ---------- Ticket ---------- */
   .ticket {
-    width: 360px;
+    width: 412px;
     flex-shrink: 0;
     min-height: 0;
     background: var(--panel);
@@ -256,15 +256,46 @@
     font-family: inherit;
   }
   .field textarea.txt:focus { outline: none; border-color: var(--accent); }
-  .comanda-item-row { display: flex; gap: 8px; align-items: center; margin-bottom: 8px; }
-  .comanda-item-row .ci-name { font-weight: 700; font-size: 15px; min-width: 130px; flex: none; }
-  .comanda-nota {
-    flex: 1; min-width: 0;
-    font-size: 15px; font-weight: 600; font-family: inherit;
-    padding: 8px 10px; border-radius: 10px;
+  .ticket-cliente { padding: 0 16px 10px; }
+  .ticket-cliente input, .ticket-detalles input {
+    width: 100%; box-sizing: border-box;
+    font-size: 16px; font-weight: 600; font-family: inherit;
+    padding: 10px 12px; border-radius: 10px;
     border: 2px solid var(--border); background: var(--panel2); color: var(--text);
   }
-  .comanda-nota:focus { outline: none; border-color: var(--accent); }
+  .ticket-cliente input:focus, .ticket-detalles input:focus { outline: none; border-color: var(--accent); }
+  .t-det-btn {
+    align-self: flex-start;
+    margin-left: 14px;
+    border: 1px dashed var(--border);
+    background: none;
+    color: var(--muted);
+    font-size: 13px; font-weight: 700; font-family: inherit;
+    padding: 5px 10px; border-radius: 8px;
+    cursor: pointer;
+  }
+  .t-det-btn:active { background: var(--panel2); }
+  .t-det-editor { margin-left: 14px; }
+  .t-det-input {
+    width: 100%; box-sizing: border-box;
+    font-size: 14px; font-weight: 600; font-family: inherit;
+    padding: 7px 10px; border-radius: 8px;
+    border: 2px solid var(--border); background: var(--panel2); color: var(--text);
+  }
+  .t-det-input:focus { outline: none; border-color: var(--accent); }
+  .t-det-note {
+    margin-left: 14px;
+    display: flex; align-items: flex-start; gap: 6px;
+    font-size: 14px; color: var(--text);
+    background: var(--panel2); border: 1px solid var(--border);
+    border-radius: 8px; padding: 6px 8px 6px 10px;
+  }
+  .t-det-note .t-det-text { flex: 1; min-width: 0; cursor: pointer; overflow-wrap: break-word; }
+  .t-det-note .t-det-x {
+    border: none; background: none; color: var(--danger);
+    font-size: 15px; font-weight: 800; cursor: pointer; flex-shrink: 0; padding: 0 2px;
+  }
+  .ticket-detalles { margin-bottom: 12px; }
   .quick { display: flex; gap: 8px; flex-wrap: wrap; margin: 10px 0; }
   .qchip {
     border: 1px solid var(--border);
@@ -614,8 +645,14 @@
 
   <aside class="ticket">
     <h2>Ticket</h2>
+    <div class="ticket-cliente">
+      <input id="inpTicketCliente" type="text" placeholder="Nombre del cliente (opcional)" maxlength="60">
+    </div>
     <div class="ticket-items" id="ticketItems"></div>
     <div class="ticket-foot">
+      <div class="ticket-detalles">
+        <input id="inpTicketDetalles" type="text" placeholder="Detalles generales (opcional)" maxlength="200">
+      </div>
       <div class="total-row">
         <span class="lbl">Total</span>
         <span class="val" id="totalVal">$0.00</span>
@@ -675,31 +712,6 @@
     <div class="modal-btns">
       <button class="btn-cancel" data-close="ovCobrar">Cancelar</button>
       <button class="btn-ok" id="btnConfirmarCobro" disabled>Confirmar cobro</button>
-    </div>
-  </div>
-</div>
-
-<!-- Modal Comanda: nombre del cliente -->
-<div class="overlay" id="ovComanda">
-  <div class="modal">
-    <h3>Crear comanda</h3>
-    <div class="note">Total de la comanda</div>
-    <div class="big-total" id="comandaTotal">$0.00</div>
-    <div class="field">
-      <label for="inpCliente">Nombre del cliente (opcional)</label>
-      <input class="txt" id="inpCliente" type="text" placeholder="Ej. Juan" maxlength="60">
-    </div>
-    <div class="field">
-      <label>Notas por producto (opcional)</label>
-      <div id="comandaItems"></div>
-    </div>
-    <div class="field">
-      <label for="inpDetalles">Detalles (opcional)</label>
-      <textarea class="txt" id="inpDetalles" rows="2" maxlength="200" placeholder="Ej. sin cebolla, para llevar"></textarea>
-    </div>
-    <div class="modal-btns">
-      <button class="btn-cancel" data-close="ovComanda">Cancelar</button>
-      <button class="btn-ok" id="btnConfirmarComanda">Crear comanda</button>
     </div>
   </div>
 </div>
@@ -804,8 +816,23 @@ const LS_TAB     = 'pvtaqueria_tab';
 let catalog = load(LS_CATALOG, null);
 if (!catalog) catalog = JSON.parse(JSON.stringify(CATALOG_DEFAULTS));
 
-let ticket = load(LS_TICKET, {});   // productId -> qty (persiste entre recargas)
-Object.keys(ticket).forEach(id => { if (!productById(id) || !(ticket[id] > 0)) delete ticket[id]; });
+let ticket = {};           // productId -> qty (persiste entre recargas)
+let ticketCliente = '';    // nombre del cliente (opcional)
+let ticketDetalles = '';   // detalles generales (opcional)
+let ticketNotas = {};      // productId -> nota por producto (opcional)
+(function loadTicketState() {
+  const saved = load(LS_TICKET, null);
+  if (saved && typeof saved === 'object' && saved.items && typeof saved.items === 'object') {
+    ticket = saved.items || {};
+    ticketCliente = saved.cliente || '';
+    ticketDetalles = saved.detalles || '';
+    ticketNotas = saved.notas || {};
+  } else if (saved && typeof saved === 'object') {
+    ticket = saved; // formato viejo: { productId: qty }
+  }
+  Object.keys(ticket).forEach(id => { if (!productById(id) || !(ticket[id] > 0)) delete ticket[id]; });
+  Object.keys(ticketNotas).forEach(id => { if (!productById(id) || !ticket[id]) delete ticketNotas[id]; });
+})();
 let activeCat = load(LS_TAB, null);
 if (!catalog.find(c => c.id === activeCat)) activeCat = catalog[0] ? catalog[0].id : null;
 let comandas = load(LS_COMANDAS, []);
@@ -920,8 +947,34 @@ function ticketTotal() {
   }
   return total;
 }
+function openNotaEditor(id, row) {
+  if (row.querySelector('.t-det-editor')) return;
+  const wrap = document.createElement('div');
+  wrap.className = 't-det-editor';
+  const inp = document.createElement('input');
+  inp.type = 'text';
+  inp.className = 't-det-input';
+  inp.placeholder = 'Detalle (opcional)';
+  inp.maxLength = 80;
+  inp.value = ticketNotas[id] || '';
+  wrap.appendChild(inp);
+  row.appendChild(wrap);
+  const finish = () => { renderTicket(); };
+  inp.addEventListener('input', () => {
+    const v = inp.value.trim();
+    if (v) ticketNotas[id] = v; else delete ticketNotas[id];
+    saveTicket();
+  });
+  inp.addEventListener('keydown', e => { if (e.key === 'Enter') { inp.blur(); } });
+  inp.addEventListener('blur', finish);
+  inp.focus();
+}
 function renderTicket() {
   const box = document.getElementById('ticketItems');
+  const inpC = document.getElementById('inpTicketCliente');
+  if (inpC && inpC.value !== ticketCliente) inpC.value = ticketCliente;
+  const inpD = document.getElementById('inpTicketDetalles');
+  if (inpD && inpD.value !== ticketDetalles) inpD.value = ticketDetalles;
   const ids = Object.keys(ticket).filter(id => ticket[id] > 0);
   if (!ids.length) {
     box.innerHTML = '<div class="empty-ticket">Toca un producto para agregarlo al ticket.</div>';
@@ -946,7 +999,29 @@ function renderTicket() {
         '</div>';
       row.querySelector('[data-act="dec"]').addEventListener('click', () => changeQty(id, -1));
       row.querySelector('[data-act="inc"]').addEventListener('click', () => changeQty(id, 1));
-      row.querySelector('[data-act="rm"]').addEventListener('click', () => { delete ticket[id]; refreshAll(); });
+      row.querySelector('[data-act="rm"]').addEventListener('click', () => { delete ticket[id]; delete ticketNotas[id]; refreshAll(); });
+      const nota = ticketNotas[id];
+      if (nota) {
+        const noteEl = document.createElement('div');
+        noteEl.className = 't-det-note';
+        const txt = document.createElement('span');
+        txt.className = 't-det-text';
+        txt.textContent = nota;
+        txt.addEventListener('click', () => openNotaEditor(id, row));
+        const x = document.createElement('button');
+        x.className = 't-det-x';
+        x.textContent = '×';
+        x.addEventListener('click', () => { delete ticketNotas[id]; saveTicket(); renderTicket(); });
+        noteEl.appendChild(txt);
+        noteEl.appendChild(x);
+        row.appendChild(noteEl);
+      } else {
+        const btn = document.createElement('button');
+        btn.className = 't-det-btn';
+        btn.textContent = '＋ Agregar detalles';
+        btn.addEventListener('click', () => openNotaEditor(id, row));
+        row.appendChild(btn);
+      }
       box.appendChild(row);
     });
   }
@@ -955,8 +1030,9 @@ function renderTicket() {
   document.getElementById('btnComanda').disabled = total <= 0;
 }
 function saveTicket() {
-  Object.keys(ticket).forEach(id => { if (!productById(id) || !(ticket[id] > 0)) delete ticket[id]; });
-  save(LS_TICKET, ticket);
+  Object.keys(ticket).forEach(id => { if (!productById(id) || !(ticket[id] > 0)) { delete ticket[id]; delete ticketNotas[id]; } });
+  Object.keys(ticketNotas).forEach(id => { if (!ticket[id]) delete ticketNotas[id]; });
+  save(LS_TICKET, { items: ticket, cliente: ticketCliente, detalles: ticketDetalles, notas: ticketNotas });
 }
 function refreshAll() { renderGrid(); renderTicket(); saveTicket(); }
 function addToTicket(id) { ticket[id] = (ticket[id] || 0) + 1; refreshAll(); }
@@ -965,51 +1041,28 @@ function changeQty(id, delta) {
   if (ticket[id] <= 0) delete ticket[id];
   refreshAll();
 }
+const inpTicketCliente = document.getElementById('inpTicketCliente');
+const inpTicketDetalles = document.getElementById('inpTicketDetalles');
+inpTicketCliente.addEventListener('input', () => { ticketCliente = inpTicketCliente.value; saveTicket(); });
+inpTicketDetalles.addEventListener('input', () => { ticketDetalles = inpTicketDetalles.value; saveTicket(); });
 document.getElementById('btnVaciar').addEventListener('click', () => {
-  if (!Object.keys(ticket).length) return;
-  ticket = {}; refreshAll();
+  if (!Object.keys(ticket).length && !ticketCliente && !ticketDetalles && !Object.keys(ticketNotas).length) return;
+  ticket = {}; ticketCliente = ''; ticketDetalles = ''; ticketNotas = {};
+  inpTicketCliente.value = ''; inpTicketDetalles.value = '';
+  refreshAll();
 });
-const inpCliente = document.getElementById('inpCliente');
-const inpDetalles = document.getElementById('inpDetalles');
-let comandaNotaInputs = [];
 document.getElementById('btnComanda').addEventListener('click', () => {
   const ids = Object.keys(ticket).filter(id => ticket[id] > 0 && productById(id));
   if (!ids.length) return;
-  document.getElementById('comandaTotal').textContent = fmt(ticketTotal());
-  inpCliente.value = '';
-  inpDetalles.value = '';
-  const box = document.getElementById('comandaItems');
-  box.innerHTML = '';
-  comandaNotaInputs = [];
-  ids.forEach(id => {
+  const items = ids.map(id => {
     const p = productById(id);
-    const row = document.createElement('div');
-    row.className = 'comanda-item-row';
-    row.innerHTML = '<span class="ci-name">' + ticket[id] + '× ' + escapeHtml(p.name) + '</span>';
-    const inp = document.createElement('input');
-    inp.type = 'text';
-    inp.className = 'comanda-nota';
-    inp.placeholder = 'Nota (opcional)';
-    inp.maxLength = 80;
-    row.appendChild(inp);
-    box.appendChild(row);
-    comandaNotaInputs.push(inp);
-  });
-  showOv('ovComanda');
-  setTimeout(() => inpCliente.focus(), 60);
-});
-document.getElementById('btnConfirmarComanda').addEventListener('click', () => {
-  const ids = Object.keys(ticket).filter(id => ticket[id] > 0 && productById(id));
-  if (!ids.length) { hideOv('ovComanda'); return; }
-  const items = ids.map((id, idx) => {
-    const p = productById(id);
-    const nota = comandaNotaInputs[idx] ? comandaNotaInputs[idx].value.trim() : '';
     const it = { id: p.id, name: p.name, price: p.price, qty: ticket[id], subtotal: p.price * ticket[id] };
+    const nota = (ticketNotas[id] || '').trim();
     if (nota) it.nota = nota;
     return it;
   });
-  const nombre = inpCliente.value.trim();
-  const detalles = inpDetalles.value.trim();
+  const nombre = ticketCliente.trim();
+  const detalles = ticketDetalles.trim();
   comandaSeq += 1;
   const comanda = { id: comandaSeq, datetime: nowISO(), items: items, total: ticketTotal(), status: 'activa' };
   if (nombre) comanda.cliente = nombre;
@@ -1017,12 +1070,12 @@ document.getElementById('btnConfirmarComanda').addEventListener('click', () => {
   comandas.push(comanda);
   save(LS_COMANDAS, comandas);
   save(LS_COMANDA_SEQ, comandaSeq);
-  ticket = {}; refreshAll();
+  ticket = {}; ticketCliente = ''; ticketDetalles = ''; ticketNotas = {};
+  inpTicketCliente.value = ''; inpTicketDetalles.value = '';
+  refreshAll();
   updateHomeComandas();
-  hideOv('ovComanda');
   toast('Comanda #' + comandaSeq + ' creada');
 });
-inpCliente.addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('btnConfirmarComanda').click(); });
 
 /* ================= Cobrar ================= */
 const inpRecibido = document.getElementById('inpRecibido');
@@ -1483,7 +1536,7 @@ document.getElementById('btnGuardarConfig').addEventListener('click', () => {
   catalog = configDraft;
   save(LS_CATALOG, catalog);
   // Quitar del ticket productos que ya no existen
-  Object.keys(ticket).forEach(id => { if (!productById(id)) delete ticket[id]; });
+  Object.keys(ticket).forEach(id => { if (!productById(id)) { delete ticket[id]; delete ticketNotas[id]; } });
   saveTicket();
   if (!catalog.find(c => c.id === activeCat)) activeCat = catalog[0] ? catalog[0].id : null;
   renderTabs(); renderGrid(); renderTicket();
