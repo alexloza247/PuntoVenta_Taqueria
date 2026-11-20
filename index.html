@@ -462,7 +462,7 @@
   }
   .vs-card .vs-label { display: block; font-size: 12px; font-weight: 800; letter-spacing: .5px; text-transform: uppercase; color: var(--muted); }
   .vs-card .vs-value { display: block; font-size: 24px; font-weight: 900; color: var(--accent); font-variant-numeric: tabular-nums; margin-top: 4px; }
-  .ventas-body { flex: 1; min-height: 0; overflow-y: auto; padding: 14px 20px; width: 100%; max-width: 1200px; margin: 0 auto; }
+  .ventas-body { flex: 1; min-height: 0; overflow-y: auto; padding: 14px 20px 20px; width: 100%; max-width: 1200px; margin: 0 auto; }
   .ventas-daynav { display: flex; align-items: center; justify-content: center; gap: 12px; padding: 12px 20px 0; width: 100%; max-width: 1200px; margin: 0 auto; }
   .vn-btn { border: 1px solid var(--border); background: var(--panel); color: var(--accent); font-size: 24px; font-weight: 800; width: 44px; height: 44px; border-radius: 10px; cursor: pointer; line-height: 1; padding: 0; }
   .vn-btn:disabled { opacity: .35; cursor: not-allowed; }
@@ -515,7 +515,6 @@
   }
   .vc-badge.warn { background: #fdecec; color: #b91c1c; border-color: #f3c6c6; }
   .ventas-empty { text-align: center; color: var(--muted); font-size: 16px; padding: 48px 16px; }
-  .ventas-actions { display: flex; justify-content: flex-end; padding: 14px 20px 14px; width: 100%; max-width: 1200px; margin: 0 auto; }
   .btn-link-danger {
     background: transparent;
     border: 1px solid #f3c6c6;
@@ -792,6 +791,36 @@
     cursor: pointer; min-height: 44px;
   }
 
+  /* ---------- Sincronización en red ---------- */
+  .sync-banner {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 60;
+    background: #b45309; color: #fff;
+    font-size: 14px; font-weight: 700; text-align: center;
+    padding: 10px 14px; line-height: 1.4;
+    box-shadow: 0 3px 10px rgba(0,0,0,.25);
+  }
+  .sync-banner.hidden { display: none; }
+  .sync-status { font-size: 14px; font-weight: 700; color: var(--muted); line-height: 1.45; margin-bottom: 10px; }
+  .sync-status.ok { color: var(--accent); }
+  .sync-status.warn { color: #b45309; }
+  .sync-url-row { display: flex; gap: 8px; margin-bottom: 10px; }
+  .sync-url-input {
+    flex: 1; min-width: 0;
+    padding: 10px 12px; border: 2px solid var(--border); border-radius: 10px;
+    background: var(--panel2); color: var(--text);
+    font-family: inherit; font-size: 15px; font-weight: 700;
+  }
+  .sync-url-input:focus { outline: none; border-color: var(--accent); }
+  .btn-sync {
+    padding: 10px 16px; border-radius: 10px; border: none;
+    background: var(--accent); color: #fff;
+    font-size: 15px; font-weight: 900; cursor: pointer; min-height: 44px;
+    flex-shrink: 0;
+  }
+  .btn-sync.secondary { background: var(--panel2); color: var(--accent); border: 1px solid var(--border); }
+  .sync-lan-url { display: block; width: 100%; margin-bottom: 8px; }
+  .sync-lan-label { display: block; font-size: 14px; font-weight: 700; color: var(--muted); margin-bottom: 6px; }
+
   /* ---------- Botón Comanda ---------- */
   .btn-comanda {
     flex: 1;
@@ -819,6 +848,8 @@
 </style>
 </head>
 <body>
+
+<div class="sync-banner hidden" id="syncBanner"></div>
 
 <section id="screenHome" class="screen">
   <div class="home-header">
@@ -944,9 +975,6 @@
       <div class="vs-card"><span class="vs-label">Ventas</span><span class="vs-value" id="ventasCount">0</span></div>
     </div>
     <div class="ventas-body" id="ventasBody"></div>
-    <div class="ventas-actions">
-      <button class="btn-link-danger" id="btnLimpiarVentas">Borrar historial</button>
-    </div>
   </div>
 </section>
 
@@ -1079,6 +1107,309 @@ const LS_DEVICES = 'pvtaqueria_devices';
 const LS_NOMBRE = 'pvtaqueria_nombre';
 const LS_SUCURSAL = 'pvtaqueria_sucursal';
 
+/* ================= Sincronización en red (LAN) ================= */
+const LS_SYNC_URL = 'pvtaqueria_sync_url';
+const LS_DEVICE_ID = 'pvtaqueria_deviceId';
+const LS_SYNC_CACHE = 'pvtaqueria_sync_cache';
+const LS_SYNC_DISABLED = 'pvtaqueria_sync_disabled';
+const LS_SYNC_CONFIRMED = 'pvtaqueria_sync_overwrite_ok';
+
+const SYNCED_KEYS = new Set([LS_CATALOG, LS_COMANDAS, LS_COMANDA_SEQ, LS_SALES, LS_SESSION, LS_CORTES, LS_LASTCUT, LS_DEVICES, LS_SUCURSAL]);
+const SYNC_SET_ROUTES = {
+  [LS_CATALOG]: { op: 'catalog.set', payload: v => ({ catalog: v }) },
+  [LS_DEVICES]: { op: 'devices.set', payload: v => ({ devices: v }) },
+  [LS_SUCURSAL]: { op: 'sucursal.set', payload: v => ({ suffix: v }) },
+  [LS_SESSION]: { op: 'session.set', payload: v => ({ session: v }) },
+  [LS_CORTES]: { op: 'cortes.set', payload: v => ({ cortes: v }) },
+  [LS_LASTCUT]: { op: 'lastCorteIndex.set', payload: v => ({ value: v }) },
+};
+
+let currentScreenId = 'screenHome';
+
+function load(key, fallback) {
+  try { const v = JSON.parse(localStorage.getItem(key)); return v == null ? fallback : v; }
+  catch (e) { return fallback; }
+}
+function save(key, val) {
+  if (SYNCED_KEYS.has(key)) {
+    if (Sync.mode === 'connected') {
+      const route = SYNC_SET_ROUTES[key];
+      if (route) Sync.send(route.op, route.payload(val));
+      return;
+    }
+    if (Sync.mode === 'offline') return;
+  }
+  localStorage.setItem(key, JSON.stringify(val));
+}
+
+const Sync = {
+  mode: 'local', // local | connecting | connected | offline
+  serverUrl: null,
+  deviceId: null,
+  version: -1,
+  perms: null,
+  isAdmin: false,
+  lanUrls: [],
+  es: null,
+  probeTimer: null,
+  send(op, payload) { return syncSend(op, payload); }
+};
+
+function getDeviceId() {
+  let id = null;
+  try { id = localStorage.getItem(LS_DEVICE_ID); } catch (e) {}
+  if (!id) {
+    id = 'dev-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 8);
+    try { localStorage.setItem(LS_DEVICE_ID, id); } catch (e) {}
+  }
+  return id;
+}
+
+function fetchWithTimeout(url, ms, opts) {
+  const ctrl = new AbortController();
+  const t = setTimeout(() => ctrl.abort(), ms);
+  return fetch(url, Object.assign({}, opts, { signal: ctrl.signal })).finally(() => clearTimeout(t));
+}
+
+function normalizeServerUrl(u) {
+  u = String(u || '').trim();
+  if (!u) return '';
+  if (!/^https?:\/\//i.test(u)) u = 'http://' + u;
+  return u.replace(/\/+$/, '');
+}
+
+function setStateVars(state) {
+  if (!state || typeof state !== 'object') return;
+  if (state.catalog) catalog = state.catalog;
+  comandas = state.comandas || [];
+  comandaSeq = state.comandaSeq || 0;
+  sales = state.sales || [];
+  session = state.session || null;
+  cortes = state.cortes || [];
+  lastCorteIndex = state.lastCorteIndex || 0;
+  devices = state.devices || [];
+  sucursalSuffix = state.sucursalSuffix || '';
+  nombreSucursal = nombreCompleto();
+}
+
+function applyRemoteState(state, version) {
+  if (typeof version === 'number' && Sync.version >= 0 && version <= Sync.version) return false;
+  setStateVars(state);
+  Sync.version = version;
+  try { localStorage.setItem(LS_SYNC_CACHE, JSON.stringify({ version: version, state: state })); } catch (e) {}
+  refreshFromSync();
+  return true;
+}
+
+function refreshFromSync() {
+  applyNombreSucursal();
+  Object.keys(ticket).forEach(id => { if (!productById(id)) { delete ticket[id]; delete ticketNotas[id]; } });
+  saveTicket();
+  updateHomeComandas();
+  refreshSessionBtns();
+  if (payCtx && payCtx.kind === 'comanda' && !comandas.some(c => c.id === payCtx.comanda.id)) {
+    hideOv('ovCobrar'); payCtx = null;
+  }
+  if (currentScreenId === 'screenComandas') renderComandas();
+  else if (currentScreenId === 'screenVentas') renderVentas();
+  else if (currentScreenId === 'screenPos') { renderTabs(); renderGrid(); renderTicket(); }
+  updateSyncBanner();
+}
+
+function updateSyncBanner() {
+  const b = document.getElementById('syncBanner');
+  if (!b) return;
+  if (Sync.mode === 'offline') {
+    b.textContent = 'Sin conexión con la computadora. Mostrando los últimos datos guardados; los cambios están desactivados hasta reconectar.';
+    b.classList.remove('hidden');
+  } else {
+    b.classList.add('hidden');
+  }
+}
+
+function enterOffline() {
+  if (Sync.mode === 'offline') return;
+  Sync.mode = 'offline';
+  try {
+    const raw = localStorage.getItem(LS_SYNC_CACHE);
+    if (raw) {
+      const cached = JSON.parse(raw);
+      if (cached && cached.state) {
+        setStateVars(cached.state);
+        Sync.version = cached.version || 0;
+      }
+    }
+  } catch (e) {}
+  applyNombreSucursal();
+  updateHomeComandas();
+  refreshSessionBtns();
+  updateSyncBanner();
+}
+
+async function syncSend(op, payload) {
+  if (Sync.mode !== 'connected' || !Sync.serverUrl) {
+    toast('Sin conexión con la computadora');
+    return null;
+  }
+  try {
+    const res = await fetch(Sync.serverUrl + '/mutate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ deviceId: Sync.deviceId, op: op, payload: payload })
+    });
+    const data = await res.json().catch(() => null);
+    if (!res.ok || !data || !data.ok) {
+      toast('No se pudo guardar' + (data && data.error ? ': ' + data.error : ''));
+      try {
+        const st = await (await fetchWithTimeout(Sync.serverUrl + '/state', 3000)).json();
+        if (st && st.state) applyRemoteState(st.state, st.version);
+      } catch (e) { enterOffline(); }
+      return null;
+    }
+    if (data.state) applyRemoteState(data.state, data.version);
+    return data.result || {};
+  } catch (e) {
+    enterOffline();
+    toast('Sin conexión con la computadora');
+    return null;
+  }
+}
+
+function localHasMeaningfulData() {
+  return !!( (sales && sales.length) || (comandas && comandas.length) || (cortes && cortes.length) || session || sucursalSuffix || JSON.stringify(catalog) !== JSON.stringify(CATALOG_DEFAULTS) );
+}
+
+async function seedServer(url) {
+  const payload = {
+    catalog: catalog, comandas: comandas, comandaSeq: comandaSeq, sales: sales,
+    session: session, cortes: cortes, lastCorteIndex: lastCorteIndex,
+    devices: devices, sucursalSuffix: sucursalSuffix
+  };
+  const res = await fetch(url + '/mutate', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ deviceId: Sync.deviceId, op: 'state.seed', payload: { state: payload } })
+  });
+  const data = await res.json().catch(() => null);
+  if (data && data.ok && data.state) { applyRemoteState(data.state, data.version); return; }
+  const st = await (await fetchWithTimeout(url + '/state', 3000)).json();
+  if (st && st.state) applyRemoteState(st.state, st.version);
+}
+
+function openEvents(url) {
+  if (Sync.es) { try { Sync.es.close(); } catch (e) {} }
+  let es;
+  try { es = new EventSource(url + '/events?deviceId=' + encodeURIComponent(Sync.deviceId)); } catch (e) { return; }
+  Sync.es = es;
+  es.onmessage = ev => {
+    try {
+      const d = JSON.parse(ev.data);
+      if (!d || !d.state) return;
+      if (Sync.mode === 'offline') {
+        Sync.mode = 'connected';
+        updateSyncBanner();
+        toast('Reconectado: datos sincronizados');
+      }
+      applyRemoteState(d.state, d.version);
+    } catch (e) {}
+  };
+  es.onerror = () => {
+    if (Sync.mode !== 'connected') return;
+    clearTimeout(Sync.probeTimer);
+    Sync.probeTimer = setTimeout(async () => {
+      if (Sync.mode !== 'connected') return;
+      try {
+        const r = await fetchWithTimeout(Sync.serverUrl + '/state', 3000);
+        if (!r.ok) throw new Error('sin respuesta');
+        const d = await r.json();
+        if (d && d.state) applyRemoteState(d.state, d.version);
+      } catch (e) { enterOffline(); }
+    }, 5000);
+  };
+}
+
+async function tryConnect(rawUrl) {
+  const url = normalizeServerUrl(rawUrl);
+  if (!url) return false;
+  Sync.mode = 'connecting';
+  updateSyncBanner();
+  try {
+    const res = await fetchWithTimeout(url + '/state', 4000);
+    if (!res.ok) throw new Error('sin respuesta');
+    const data = await res.json();
+    let reg = { permissions: null, isAdmin: false };
+    try {
+      const rr = await fetchWithTimeout(url + '/register', 4000, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ deviceId: Sync.deviceId, name: '', type: '' })
+      });
+      if (rr.ok) reg = await rr.json();
+    } catch (e) {}
+    Sync.perms = reg.permissions || null;
+    Sync.isAdmin = !!reg.isAdmin;
+    Sync.serverUrl = url;
+    try { localStorage.setItem(LS_SYNC_URL, url); localStorage.removeItem(LS_SYNC_DISABLED); } catch (e) {}
+    Sync.mode = 'connected';
+    if (data.version === 0) {
+      await seedServer(url);
+    } else {
+      if (localHasMeaningfulData() && !localStorage.getItem(LS_SYNC_CONFIRMED)) {
+        const ok = confirm('Este dispositivo tiene datos locales (ventas, comandas o cambios de catálogo) y el servidor ya tiene otros datos. Al conectar se mostrarán los datos del servidor. ¿Continuar?');
+        if (!ok) {
+          Sync.mode = 'local';
+          Sync.serverUrl = null;
+          updateSyncBanner();
+          return false;
+        }
+        try { localStorage.setItem(LS_SYNC_CONFIRMED, '1'); } catch (e) {}
+      }
+      applyRemoteState(data.state, data.version);
+    }
+    try {
+      const info = await (await fetchWithTimeout(url + '/info', 3000)).json();
+      if (info && Array.isArray(info.lanUrls)) Sync.lanUrls = info.lanUrls;
+    } catch (e) {}
+    openEvents(url);
+    updateSyncBanner();
+    toast('Conectado: datos sincronizados');
+    if (currentScreenId === 'screenConfig' && configTab === 'dispositivos') renderDevices();
+    return true;
+  } catch (e) {
+    if (localStorage.getItem(LS_SYNC_URL) || Sync.serverUrl) {
+      enterOffline();
+    } else {
+      Sync.mode = 'local';
+      updateSyncBanner();
+      toast('No se pudo conectar con ' + url);
+    }
+    return false;
+  }
+}
+
+function disconnectSync() {
+  if (Sync.es) { try { Sync.es.close(); } catch (e) {} Sync.es = null; }
+  clearTimeout(Sync.probeTimer);
+  Sync.mode = 'local';
+  Sync.serverUrl = null;
+  Sync.perms = null;
+  Sync.isAdmin = false;
+  try { localStorage.removeItem(LS_SYNC_URL); localStorage.setItem(LS_SYNC_DISABLED, '1'); } catch (e) {}
+  updateSyncBanner();
+  toast('Desconectado: modo local');
+  if (currentScreenId === 'screenConfig' && configTab === 'dispositivos') renderDevices();
+}
+
+function initSync() {
+  Sync.deviceId = getDeviceId();
+  if (localStorage.getItem(LS_SYNC_DISABLED)) return;
+  const saved = localStorage.getItem(LS_SYNC_URL);
+  if (saved) { tryConnect(saved); return; }
+  const h = location.hostname || '';
+  const isLocalHost = h === 'localhost' || h === '127.0.0.1' || /^192\.168\./.test(h) || /^10\./.test(h) || /^172\.(1[6-9]|2\d|3[01])\./.test(h);
+  if ((location.protocol === 'http:' || location.protocol === 'https:') && isLocalHost) {
+    tryConnect(location.origin);
+  }
+}
+
 function isValidProduct(p) {
   if (!p) return false;
   const okName = String(p.name || '').trim().length > 0;
@@ -1184,12 +1515,6 @@ if (devices === null) {
 if (!Array.isArray(devices)) devices = [];
 // Si un dispositivo está nulo (sin nombre) se borra automáticamente
 if (pruneDevices(devices) > 0) save(LS_DEVICES, devices);
-
-function load(key, fallback) {
-  try { const v = JSON.parse(localStorage.getItem(key)); return v == null ? fallback : v; }
-  catch (e) { return fallback; }
-}
-function save(key, val) { localStorage.setItem(key, JSON.stringify(val)); }
 
 function productById(id) {
   for (const cat of catalog) for (const sec of cat.sections) for (const p of sec.items) if (p.id === id) return p;
@@ -1404,18 +1729,27 @@ document.getElementById('btnComanda').addEventListener('click', () => {
   });
   const nombre = ticketCliente.trim();
   const detalles = ticketDetalles.trim();
-  comandaSeq += 1;
-  const comanda = { id: comandaSeq, datetime: nowISO(), items: items, total: ticketTotal(), status: 'activa' };
-  if (nombre) comanda.cliente = nombre;
-  if (detalles) comanda.detalles = detalles;
-  comandas.push(comanda);
-  save(LS_COMANDAS, comandas);
-  save(LS_COMANDA_SEQ, comandaSeq);
+  const comandaData = { datetime: nowISO(), items: items, total: ticketTotal(), status: 'activa' };
+  if (nombre) comandaData.cliente = nombre;
+  if (detalles) comandaData.detalles = detalles;
+  if (Sync.mode === 'connected') {
+    Sync.send('comanda.create', { comanda: comandaData }).then(r => {
+      if (r && r.comanda) { toast('Comanda #' + r.comanda.id + ' creada'); updateHomeComandas(); }
+    });
+  } else if (Sync.mode === 'offline') {
+    toast('Sin conexión con la computadora: reconecta para crear la comanda');
+  } else {
+    comandaSeq += 1;
+    const comanda = Object.assign({ id: comandaSeq }, comandaData);
+    comandas.push(comanda);
+    save(LS_COMANDAS, comandas);
+    save(LS_COMANDA_SEQ, comandaSeq);
+    toast('Comanda #' + comandaSeq + ' creada');
+  }
   ticket = {}; ticketCliente = ''; ticketDetalles = ''; ticketNotas = {};
   inpTicketCliente.value = ''; inpTicketDetalles.value = '';
   refreshAll();
-  updateHomeComandas();
-  toast('Comanda #' + comandaSeq + ' creada');
+  if (Sync.mode !== 'connected') updateHomeComandas();
 });
 
 /* ================= Cobrar ================= */
@@ -1463,22 +1797,12 @@ document.getElementById('btnConfirmarCobro').addEventListener('click', () => {
   const total = payCtx.total;
   const rec = parseFloat(inpRecibido.value) || 0;
   if (rec < total) return;
-  let items;
-  if (payCtx.kind === 'comanda') {
-    items = payCtx.comanda.items.map(i => {
-      const it = { id: i.id, name: i.name, price: i.price, qty: i.qty, subtotal: i.subtotal };
-      if (i.nota) it.nota = i.nota;
-      return it;
-    });
-    comandas = comandas.filter(c => c.id !== payCtx.comanda.id);
-    save(LS_COMANDAS, comandas);
-  } else {
-    items = Object.keys(ticket).filter(id => ticket[id] > 0 && productById(id)).map(id => {
-      const p = productById(id);
-      return { id: p.id, name: p.name, price: p.price, qty: ticket[id], subtotal: p.price * ticket[id] };
-    });
-    ticket = {};
-  }
+  const comanda = payCtx.comanda;
+  const items = comanda.items.map(i => {
+    const it = { id: i.id, name: i.name, price: i.price, qty: i.qty, subtotal: i.subtotal };
+    if (i.nota) it.nota = i.nota;
+    return it;
+  });
   const venta = {
     id: Date.now(),
     datetime: nowISO(),
@@ -1488,8 +1812,20 @@ document.getElementById('btnConfirmarCobro').addEventListener('click', () => {
     change: rec - total,
     sessionOpen: !!session
   };
-  if (payCtx.kind === 'comanda' && payCtx.comanda.cliente) venta.cliente = payCtx.comanda.cliente;
-  if (payCtx.kind === 'comanda' && payCtx.comanda.detalles) venta.detalles = payCtx.comanda.detalles;
+  if (comanda.cliente) venta.cliente = comanda.cliente;
+  if (comanda.detalles) venta.detalles = comanda.detalles;
+  if (Sync.mode === 'connected') {
+    Sync.send('comanda.pay', { id: comanda.id, venta }).then(r => {
+      if (!r) return;
+      if (printerSettings.autoPrint) printTicketHtml(buildPrintTicketHtml(venta, false));
+      hideOv('ovCobrar');
+      toast('Venta registrada. Cambio: ' + fmt(rec - total));
+    });
+    return;
+  }
+  if (Sync.mode === 'offline') { toast('Sin conexión con la computadora: reconecta para cobrar'); return; }
+  comandas = comandas.filter(c => c.id !== comanda.id);
+  save(LS_COMANDAS, comandas);
   sales.push(venta);
   save(LS_SALES, sales);
   if (printerSettings.autoPrint) printTicketHtml(buildPrintTicketHtml(venta, false));
@@ -1536,7 +1872,18 @@ document.getElementById('btnApertura').addEventListener('click', () => {
 });
 document.getElementById('btnIniciarCaja').addEventListener('click', () => {
   const fondo = parseFloat(document.getElementById('inpFondo').value) || 0;
-  session = { opening: fondo, startISO: nowISO(), salesStartIndex: sales.length };
+  const newSession = { opening: fondo, startISO: nowISO(), salesStartIndex: sales.length };
+  if (Sync.mode === 'connected') {
+    Sync.send('session.set', { session: newSession }).then(r => {
+      if (!r) return;
+      refreshSessionBtns();
+      hideOv('ovApertura');
+      toast('Caja abierta con fondo de ' + fmt(fondo));
+    });
+    return;
+  }
+  if (Sync.mode === 'offline') { toast('Sin conexión con la computadora: reconecta para abrir la caja'); return; }
+  session = newSession;
   save(LS_SESSION, session);
   refreshSessionBtns();
   hideOv('ovApertura');
@@ -1587,7 +1934,7 @@ function openCorteX() {
   document.getElementById('corteTitle').textContent = 'Corte X';
   document.getElementById('corteBody').innerHTML = r.html;
   document.getElementById('btnCerrarCaja').style.display = 'none';
-  cortes.push({
+  const corte = {
     type: 'X',
     datetime: nowISO(),
     opening: opening,
@@ -1596,8 +1943,15 @@ function openCorteX() {
     salesCount: list.length,
     totalSold: r.totalSold,
     expectedCash: opening + r.totalSold
-  });
-  save(LS_CORTES, cortes);
+  };
+  if (Sync.mode === 'connected') {
+    Sync.send('corte.x', { corte: corte });
+  } else if (Sync.mode === 'offline') {
+    toast('Sin conexión con la computadora: reconecta para registrar el corte');
+  } else {
+    cortes.push(corte);
+    save(LS_CORTES, cortes);
+  }
   showOv('ovCorte');
 }
 function openCorteZ() {
@@ -1631,7 +1985,7 @@ document.getElementById('btnCorteZ').addEventListener('click', openCorteZ);
 document.getElementById('btnCerrarCaja').addEventListener('click', () => {
   const list = sessionSales();
   const totalSold = list.reduce((s, v) => s + v.total, 0);
-  cortes.push({
+  const corte = {
     type: 'Z',
     closedAt: nowISO(),
     opening: session ? session.opening : 0,
@@ -1639,7 +1993,18 @@ document.getElementById('btnCerrarCaja').addEventListener('click', () => {
     salesCount: list.length,
     totalSold: totalSold,
     expectedCash: (session ? session.opening : 0) + totalSold
-  });
+  };
+  if (Sync.mode === 'connected') {
+    Sync.send('corte.z', { corte: corte, lastCorteIndex: sales.length }).then(r => {
+      if (!r) return;
+      refreshSessionBtns();
+      hideOv('ovCorte');
+      toast('Corte Z registrado: ' + fmt(totalSold) + ' vendidos');
+    });
+    return;
+  }
+  if (Sync.mode === 'offline') { toast('Sin conexión con la computadora: reconecta para cerrar la caja'); return; }
+  cortes.push(corte);
   save(LS_CORTES, cortes);
   lastCorteIndex = sales.length;
   save(LS_LASTCUT, lastCorteIndex);
@@ -1783,15 +2148,6 @@ document.getElementById('btnVentasNext').addEventListener('click', () => {
   ventasDay = startOfDay(d);
   renderVentas();
 });
-document.getElementById('btnLimpiarVentas').addEventListener('click', () => {
-  if (!sales.length) return;
-  if (!confirm('¿Borrar todo el historial de ventas? Esta acción no se puede deshacer.')) return;
-  sales = [];
-  save(LS_SALES, sales);
-  renderVentas();
-  toast('Historial borrado');
-});
-
 /* ================= Navegación entre pantallas (rutas por hash) ================= */
 const ROUTES = { inicio: 'screenHome', pos: 'screenPos', comandas: 'screenComandas', config: 'screenConfig', ventas: 'screenVentas' };
 const SCREEN_HASH = { screenHome: 'inicio', screenPos: 'pos', screenComandas: 'comandas', screenConfig: 'config', screenVentas: 'ventas' };
@@ -1800,6 +2156,7 @@ function screenFromHash() {
   return ROUTES[h] || 'screenHome';
 }
 function showScreen(id, fromHash) {
+  currentScreenId = id;
   document.querySelectorAll('.overlay.show').forEach(ov => ov.classList.remove('show'));
   payCtx = null;
   document.querySelectorAll('.screen').forEach(s => s.classList.toggle('hidden', s.id !== id));
@@ -1849,6 +2206,13 @@ function comandaCard(c, isActiva) {
     bEnt.className = 'c-btn deliver';
     bEnt.textContent = 'Entregada';
     bEnt.addEventListener('click', () => {
+      if (Sync.mode === 'connected') {
+        Sync.send('comanda.status', { id: c.id, status: 'completada' }).then(r => {
+          if (r) toast('Comanda #' + c.id + ' entregada');
+        });
+        return;
+      }
+      if (Sync.mode === 'offline') { toast('Sin conexión con la computadora: reconecta para guardar cambios'); return; }
       c.status = 'completada';
       save(LS_COMANDAS, comandas);
       renderComandas(); updateHomeComandas();
@@ -1968,6 +2332,34 @@ function renderGeneral() {
   note.textContent = 'Más opciones próximamente';
   sec.appendChild(note);
   body.appendChild(sec);
+
+  const secH = document.createElement('div');
+  secH.className = 'dev-section';
+  const hH = document.createElement('h3');
+  hH.textContent = 'Historial de ventas';
+  secH.appendChild(hH);
+  const btnClear = document.createElement('button');
+  btnClear.className = 'btn-link-danger';
+  btnClear.textContent = 'Borrar historial';
+  btnClear.addEventListener('click', () => {
+    if (Sync.mode === 'offline') { toast('Sin conexión con la computadora: reconecta para borrar el historial'); return; }
+    if (!sales.length) return;
+    if (!confirm('¿Borrar todo el historial de ventas? Esta acción no se puede deshacer.')) return;
+    if (Sync.mode === 'connected') {
+      Sync.send('ventas.clear', {}).then(r => { if (r) toast('Historial borrado'); });
+    } else {
+      sales = [];
+      save(LS_SALES, sales);
+      renderVentas();
+      toast('Historial borrado');
+    }
+  });
+  secH.appendChild(btnClear);
+  const noteH = document.createElement('div');
+  noteH.className = 'dev-note';
+  noteH.textContent = 'Borra todas las ventas registradas, de todos los días. Solo pueden hacerlo los dispositivos con permiso de Configuración.';
+  secH.appendChild(noteH);
+  body.appendChild(secH);
 }
 
 /* ================= Dispositivos (pestaña de Configuración) ================= */
@@ -2004,6 +2396,84 @@ function renderDevices(exemptId) {
   if (pruneDevices(devices, exemptId) > 0) save(LS_DEVICES, devices);
   const body = document.getElementById('devicesBody');
   body.innerHTML = '';
+
+  /* --- Sincronización en red --- */
+  const secS = document.createElement('div');
+  secS.className = 'dev-section';
+  const hS = document.createElement('h3');
+  hS.textContent = 'Sincronización en red';
+  secS.appendChild(hS);
+
+  const statusS = document.createElement('div');
+  statusS.className = 'sync-status';
+  secS.appendChild(statusS);
+
+  if (Sync.mode === 'connected') {
+    statusS.classList.add('ok');
+    statusS.textContent = 'Conectado a ' + Sync.serverUrl + ' — los datos se sincronizan con la computadora.';
+    if (!Sync.isAdmin) {
+      const noteAdmin = document.createElement('div');
+      noteAdmin.className = 'dev-note';
+      noteAdmin.textContent = 'Si esta es la computadora, ábrela con http://localhost:8080 para administrar todo.';
+      secS.appendChild(noteAdmin);
+    }
+    if (Sync.lanUrls && Sync.lanUrls.length) {
+      const lbl = document.createElement('span');
+      lbl.className = 'sync-lan-label';
+      lbl.textContent = 'Dirección para tablets y celulares (misma Wi-Fi):';
+      secS.appendChild(lbl);
+      Sync.lanUrls.forEach(u => {
+        const inp = document.createElement('input');
+        inp.type = 'text';
+        inp.className = 'sync-url-input sync-lan-url';
+        inp.value = u;
+        inp.readOnly = true;
+        inp.addEventListener('click', () => { inp.focus(); inp.select(); });
+        secS.appendChild(inp);
+      });
+    }
+    const btnDisc = document.createElement('button');
+    btnDisc.type = 'button';
+    btnDisc.className = 'btn-sync secondary';
+    btnDisc.textContent = 'Desconectar';
+    btnDisc.addEventListener('click', () => disconnectSync());
+    secS.appendChild(btnDisc);
+  } else if (Sync.mode === 'offline') {
+    statusS.classList.add('warn');
+    statusS.textContent = 'Sin conexión con ' + (Sync.serverUrl || 'la computadora') + '. Se muestran los últimos datos guardados; los cambios están desactivados.';
+    const btnRetry = document.createElement('button');
+    btnRetry.type = 'button';
+    btnRetry.className = 'btn-sync';
+    btnRetry.textContent = 'Reintentar';
+    btnRetry.addEventListener('click', () => { if (Sync.serverUrl) tryConnect(Sync.serverUrl); });
+    secS.appendChild(btnRetry);
+  } else {
+    statusS.textContent = 'Modo local: los datos se guardan solo en este dispositivo.';
+    const rowS = document.createElement('div');
+    rowS.className = 'sync-url-row';
+    const inpS = document.createElement('input');
+    inpS.type = 'text';
+    inpS.className = 'sync-url-input';
+    inpS.placeholder = 'http://192.168.1.50:8080';
+    inpS.value = localStorage.getItem(LS_SYNC_URL) || '';
+    rowS.appendChild(inpS);
+    const btnConn = document.createElement('button');
+    btnConn.type = 'button';
+    btnConn.className = 'btn-sync';
+    btnConn.textContent = 'Conectar';
+    btnConn.addEventListener('click', () => {
+      const u = normalizeServerUrl(inpS.value);
+      if (!u) { toast('Escribe la dirección de la computadora'); return; }
+      tryConnect(u);
+    });
+    rowS.appendChild(btnConn);
+    secS.appendChild(rowS);
+    const noteS = document.createElement('div');
+    noteS.className = 'dev-note';
+    noteS.textContent = 'En la computadora corre "node server.js" y abre la dirección que imprime. En las tablets abre esa misma dirección. Todos deben estar en la misma red Wi-Fi. La impresión sigue siendo local en cada dispositivo.';
+    secS.appendChild(noteS);
+  }
+  body.appendChild(secS);
 
   /* --- Impresora de tickets --- */
   const secP = document.createElement('div');
@@ -2232,7 +2702,7 @@ function renderDevices(exemptId) {
 
   const note = document.createElement('div');
   note.className = 'dev-note';
-  note.textContent = 'Los dispositivos y permisos se guardan en este dispositivo. La sincronización entre dispositivos llegará después.';
+  note.textContent = 'Los dispositivos y permisos se sincronizan con la computadora cuando está conectada; en modo local se guardan solo en este dispositivo.';
   secD.appendChild(note);
   body.appendChild(secD);
 }
@@ -2398,6 +2868,7 @@ renderTicket();
 refreshSessionBtns();
 updateHomeComandas();
 showScreen(screenFromHash());
+initSync();
 </script>
 </body>
 </html>
