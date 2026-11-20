@@ -382,7 +382,7 @@
   .home-header {
     display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 12px;
     padding: 36px 20px;
-    background: #2e7d46;
+    background: #1e5631;
     color: #fff;
     box-shadow: 0 6px 18px rgba(35,70,30,.22);
   }
@@ -405,7 +405,7 @@
     margin-top: 10px;
     padding: 10px 22px; border-radius: 999px;
     font-size: 17px; font-weight: 800;
-    background: rgba(255,255,255,.18); color: #fff;
+    background: rgba(255,255,255,.92); color: #c62828;
   }
   .home-pill::before { content: '●'; margin-right: 8px; font-size: 12px; vertical-align: 2px; }
   .home-pill.open { background: rgba(255,255,255,.92); color: #1e7a3c; }
@@ -415,17 +415,17 @@
     padding: 18px 20px; min-height: 84px;
     border-radius: 20px; border: none;
     text-align: left; cursor: pointer;
-    color: #fff;
+    color: #1b3a17;
     box-shadow: 0 8px 20px rgba(35,70,30,.20);
     transition: transform .08s ease, box-shadow .08s ease;
   }
   .home-card:active { transform: scale(.98); box-shadow: 0 4px 12px rgba(35,70,30,.20); }
-  .home-card.primary { background: #1b3a17; }
-  .home-card.alt { background: #2e7d46; }
-  .home-card.alt2 { background: #276749; }
+  .home-card.primary { background: #a5d6a7; }
+  .home-card.alt { background: #a5d6a7; }
+  .home-card.alt2 { background: #a5d6a7; }
   .hc-icon {
     width: 52px; height: 52px; border-radius: 15px;
-    background: rgba(255,255,255,.18);
+    background: rgba(27,58,23,.14);
     display: flex; align-items: center; justify-content: center;
     flex-shrink: 0;
   }
@@ -470,8 +470,8 @@
   .comanda-card .c-detalles { font-size: 14px; font-style: italic; color: var(--muted); margin-bottom: 6px; }
   .comanda-card .c-item { display: flex; justify-content: space-between; font-size: 14px; padding: 3px 0; }
   .comanda-card .c-total { text-align: right; font-weight: 900; font-size: 18px; color: var(--accent); margin: 8px 0; }
-  .comanda-card .c-btns { display: flex; gap: 8px; }
-  .c-btn { flex: 1; padding: 12px; border-radius: 10px; border: none; font-weight: 800; font-size: 15px; cursor: pointer; }
+  .comanda-card .c-btns { display: flex; gap: 8px; width: 50%; margin-left: auto; }
+  .c-btn { flex: 1; padding: 12px; border-radius: 10px; border: none; font-weight: 800; font-size: 15px; cursor: pointer; min-height: 44px; }
   .c-btn.deliver { background: var(--panel2); color: var(--accent); border: 1px solid var(--border); }
   .c-btn.pay { background: var(--pay); color: var(--pay-text); }
 
