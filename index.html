@@ -1033,6 +1033,14 @@ function isValidProduct(p) {
   const pv = parseFloat(p.price);
   return okName && !isNaN(pv) && pv > 0;
 }
+// Un recuadro está "vacío" solo si nombre Y precio están en blanco.
+// Un producto con algo escrito (aunque falte el precio) nunca se borra por esta regla.
+function isEmptyProduct(p) {
+  if (!p) return true;
+  const nameEmpty = String(p.name == null ? '' : p.name).trim() === '';
+  const priceEmpty = p.price === '' || p.price == null || String(p.price).trim() === '';
+  return nameEmpty && priceEmpty;
+}
 function pruneCatalogItems(cat) {
   if (!Array.isArray(cat)) return 0;
   let dropped = 0;
@@ -2152,6 +2160,14 @@ function renderConfig() {
       addBtn.dataset.cat = cat.id;
       addBtn.dataset.sec = sec.id;
       addBtn.addEventListener('click', () => {
+        // Si ya hay un recuadro vacío, se borra el anterior: nunca hay más de
+        // un recuadro vacío a la vez. Los productos con algo escrito no se tocan.
+        for (const c of configDraft) {
+          if (!c || !Array.isArray(c.sections)) continue;
+          for (const s of c.sections) {
+            if (s && Array.isArray(s.items)) s.items = s.items.filter(p => !isEmptyProduct(p));
+          }
+        }
         const count = sec.items.length;
         sec.items.push({ id: cfgNewId(), name: '', price: '', color: CFG_PALETTE[count % CFG_PALETTE.length] });
         renderConfig();
