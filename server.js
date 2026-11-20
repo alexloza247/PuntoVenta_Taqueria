@@ -28,12 +28,17 @@ const http = require('http');
 const fs = require('fs');
 const path = require('path');
 const os = require('os');
+const { exec } = require('child_process');
+
+const VERSION = '1.1.0';
 
 /* Carpeta de la app: junto al exe cuando está empaquetado (pkg define
  * process.pkg), si no junto a este archivo. Así index.html y data.json
  * viven en disco, al lado del exe, y actualizar la app solo requiere
- * reemplazar index.html — sin generar un exe nuevo ni tocar los datos. */
-const APP_DIR = (process.pkg ? path.dirname(process.execPath) : __dirname);
+ * reemplazar index.html — sin generar un exe nuevo ni tocar los datos.
+ * PV_APP_DIR permite apuntar a otra carpeta (usado en pruebas). */
+const APP_DIR = process.env.PV_APP_DIR || (process.pkg ? path.dirname(process.execPath) : __dirname);
+const LOG_FILE = path.join(APP_DIR, 'server.log');
 
 const PORT = parseInt(process.env.PORT || process.argv[2] || '8080', 10);
 const DATA_DIR = process.env.PV_DATA_DIR || APP_DIR;
@@ -292,6 +297,7 @@ function createServer(opts) {
   opts = opts || {};
   const port = opts.port || PORT;
   const dataDir = opts.dataDir || DATA_DIR;
+  const appDir = opts.appDir || APP_DIR;
   const dataFile = path.join(dataDir, 'data.json');
   const bakFile = dataFile + '.bak';
   const store = loadStoreFrom(dataFile, bakFile);
@@ -362,7 +368,7 @@ function createServer(opts) {
       /* Archivos de la app */
       if (req.method === 'GET' && STATIC[pathname]) {
         const entry = STATIC[pathname];
-        const filePath = path.join(APP_DIR, entry.file);
+        const filePath = path.join(appDir, entry.file);
         fs.readFile(filePath, (err, buf) => {
           if (err) { res.writeHead(404); res.end('no encontrado'); return; }
           res.writeHead(200, { 'Content-Type': entry.type, 'Cache-Control': 'no-cache' });
@@ -471,37 +477,160 @@ function createServer(opts) {
   return server;
 }
 
-/* ---------- Arranque ---------- */
+/* ---------- Arranque robusto (nunca fallar en silencio) ---------- */
 
-function start() {
-  const server = createServer({});
-  server.on('error', err => {
-    if (err.code === 'EADDRINUSE') {
-      console.error('El puerto ' + PORT + ' ya está en uso. Prueba con otro puerto:  node server.js 8081');
-    } else {
-      console.error('Error del servidor:', err.message);
+/* Bitácora en server.log junto al exe: cada arranque y cada error quedan
+ * registrados con fecha y hora, para poder diagnosticar si algo falla.
+ * Nunca lanza errores: si no se puede escribir el log, el servidor sigue. */
+function logLine(msg) {
+  try {
+    const line = '[' + new Date().toISOString() + '] ' + msg + '\n';
+    fs.appendFileSync(LOG_FILE, line);
+  } catch (e) { /* el log nunca debe tumbar el servidor */ }
+}
+
+/* Pausa antes de salir para que la ventana NO se cierre al instante y el
+ * usuario pueda leer el error. Solo espera si hay una consola interactiva
+ * (doble clic en Windows); sin consola (pruebas, tuberías) sale de inmediato. */
+function pauseBeforeExit() {
+  return new Promise(resolve => {
+    if (!process.stdin || !process.stdin.isTTY) { resolve(); return; }
+    process.stdout.write('\nPresiona Enter para cerrar esta ventana...');
+    try {
+      process.stdin.resume();
+      process.stdin.once('data', () => resolve());
+    } catch (e) { resolve(); }
+  });
+}
+
+/* Abre el navegador en la app. En Windows usa `cmd /c start`; en Mac `open`;
+ * en Linux `xdg-open`. Se omite con PV_NO_BROWSER=1 (pruebas). Nunca lanza:
+ * si el navegador no abre, el servidor sigue corriendo igual. */
+function openBrowser(url, opts) {
+  opts = opts || {};
+  if (process.env.PV_NO_BROWSER) return false;
+  const execFn = opts.execFn || exec;
+  let cmd;
+  if (process.platform === 'win32') cmd = 'cmd /c start "" "' + url + '"';
+  else if (process.platform === 'darwin') cmd = 'open "' + url + '"';
+  else cmd = 'xdg-open "' + url + '"';
+  try {
+    execFn(cmd, () => {});
+    return true;
+  } catch (e) {
+    logLine('No se pudo abrir el navegador: ' + (e && e.message));
+    return false;
+  }
+}
+
+/* Verifica que index.html esté junto al servidor; si falta, error claro
+ * en español en vez de servir errores silenciosos. */
+function checkIndexHtml(appDir) {
+  const p = path.join(appDir, 'index.html');
+  if (!fs.existsSync(p)) {
+    const e = new Error(
+      'Falta "index.html" en la misma carpeta que el servidor.\n' +
+      'Copia el archivo index.html junto a ' + (process.pkg ? 'taqueria-server.exe' : 'server.js') + ' y vuelve a intentarlo.\n' +
+      'Carpeta esperada: ' + appDir
+    );
+    e.code = 'ENOENT_INDEX';
+    throw e;
+  }
+}
+
+function printBanner(info) {
+  console.log('========================================');
+  console.log('  Taquería "El Vergel" - Servidor listo ✓');
+  console.log('========================================');
+  console.log('En esta computadora ya se abrió tu navegador con la app.');
+  console.log('Si no se abrió, abre esta dirección en Chrome:');
+  console.log('  http://localhost:' + info.port + '/');
+  if (info.urls.length) {
+    console.log('En tablets y celulares (misma Wi-Fi) abre:');
+    info.urls.forEach(u => console.log('  ' + u));
+  } else {
+    console.log('(No se detectaron direcciones de red local; abre la IP de la computadora manualmente.)');
+  }
+  console.log('Datos guardados en: ' + DATA_FILE);
+  console.log('Deja esta ventana abierta mientras uses la app. Ctrl+C para salir.');
+  console.log('Si algo falla, revisa el archivo server.log en la misma carpeta.');
+}
+
+function printStartupError(e) {
+  console.log('========================================');
+  console.log('  ERROR: el servidor no pudo arrancar');
+  console.log('========================================');
+  if (e && e.code === 'EADDRINUSE') {
+    console.log('El puerto ' + PORT + ' ya está en uso: otra copia del servidor');
+    console.log('o el programa ' + PORT + ' ya está corriendo en esta computadora.');
+    console.log('Cierra la otra ventana del servidor y vuelve a intentarlo,');
+    console.log('o arranca con otro puerto:  taqueria-server.exe 8081');
+  } else if (e && e.code === 'ENOENT_INDEX') {
+    console.log(e.message);
+  } else if (e && (e.code === 'EACCES' || e.code === 'EPERM' || e.code === 'EROFS')) {
+    console.log('No se pudo escribir en la carpeta del servidor (' + e.code + ').');
+    console.log('Revisa los permisos de la carpeta o mueve el exe a otra carpeta');
+    console.log('donde sí puedas guardar archivos (por ejemplo, el Escritorio).');
+  } else {
+    console.log('Detalle: ' + (e && e.message ? e.message : String(e)));
+  }
+  console.log('Quedó registrado en: ' + LOG_FILE);
+}
+
+/* Arranque real: verifica index.html, crea el servidor y escucha.
+ * Devuelve una promesa que resuelve con {server, port, urls, appDir}
+ * o rechaza con el error (ya registrado en server.log). */
+function main(opts) {
+  opts = opts || {};
+  return new Promise((resolve, reject) => {
+    const port = opts.port || PORT;
+    const appDir = opts.appDir || APP_DIR;
+    try {
+      logLine('=== Arranque servidor v' + VERSION + ' puerto=' + port + ' APP_DIR=' + appDir + ' pkg=' + !!process.pkg + ' ===');
+      checkIndexHtml(appDir);
+      const server = createServer({ port: port, appDir: appDir, dataDir: opts.dataDir });
+      server.on('error', err => {
+        logLine('ERROR del servidor: ' + (err && err.message) + (err && err.code ? ' (' + err.code + ')' : ''));
+        reject(err);
+      });
+      server.listen(port, () => {
+        const urls = lanUrls(port);
+        logLine('Escuchando en puerto ' + port + '. URLs LAN: ' + (urls.join(', ') || '(ninguna)'));
+        resolve({ server: server, port: port, urls: urls, appDir: appDir });
+      });
+    } catch (e) {
+      logLine('ERROR de arranque: ' + (e && e.message));
+      reject(e);
     }
+  });
+}
+
+async function start() {
+  /* Errores inesperados en tiempo de ejecución: registrar y seguir
+   * sirviendo (mejor que tumbar la caja a media venta). */
+  process.on('uncaughtException', e => {
+    logLine('Excepción no capturada: ' + (e && e.stack || e));
+    console.error('Error inesperado (el servidor sigue corriendo):', e && e.message);
+  });
+  process.on('unhandledRejection', e => {
+    logLine('Rechazo no manejado: ' + (e && e.stack || e));
+  });
+  try {
+    const info = await main({});
+    printBanner(info);
+    openBrowser('http://localhost:' + info.port + '/');
+  } catch (e) {
+    printStartupError(e);
+    logLine('Saliendo con código 1.');
+    await pauseBeforeExit();
     process.exit(1);
-  });
-  server.listen(PORT, () => {
-    const urls = lanUrls(PORT);
-    console.log('========================================');
-    console.log('  Punto de venta - Taquería "El Vergel"');
-    console.log('  Servidor de sincronización en red');
-    console.log('========================================');
-    console.log('En esta computadora abre:');
-    console.log('  http://localhost:' + PORT + '/');
-    if (urls.length) {
-      console.log('En tablets y celulares (misma Wi-Fi) abre:');
-      urls.forEach(u => console.log('  ' + u));
-    } else {
-      console.log('(No se detectaron direcciones de red local; abre la IP de la computadora manualmente.)');
-    }
-    console.log('Datos guardados en: ' + DATA_FILE);
-    console.log('Deja esta ventana abierta mientras uses la app. Ctrl+C para salir.');
-  });
+  }
 }
 
 if (require.main === module) start();
 
-module.exports = { createServer, emptyState, DEFAULT_PERMS, FULL_PERMS };
+module.exports = {
+  createServer, emptyState, DEFAULT_PERMS, FULL_PERMS,
+  main, start, logLine, pauseBeforeExit, openBrowser, checkIndexHtml,
+  printBanner, printStartupError, VERSION, LOG_FILE, APP_DIR
+};

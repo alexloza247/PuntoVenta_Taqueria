@@ -5,3 +5,5 @@ dist/
 data.json
 data.json.bak
 data.json.tmp
+# Bitácora del servidor (arranques y errores).
+server.log

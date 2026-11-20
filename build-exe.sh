@@ -9,6 +9,11 @@
 set -euo pipefail
 cd "$(dirname "$0")"
 mkdir -p dist
-npx --yes @yao-pkg/pkg server.js --targets node22-win-x64 --output dist/taqueria-server.exe
+# --public-packages "*": NO embeber bytecode V8 en el exe. Sin esto, al
+# compilar en Linux para Windows, pkg incrusta bytecode del V8 anfitrión
+# que el binario de Windows rechaza al arrancar ("V8 rejected the bytecode
+# cache") y el exe no hace nada. Con paquetes públicos el código va como
+# texto y el exe arranca en cualquier plataforma.
+npx --yes @yao-pkg/pkg server.js --targets node22-win-x64 --output dist/taqueria-server.exe --public-packages "*"
 echo "Listo: dist/taqueria-server.exe"
 echo "Copia el exe junto a index.html en la computadora de la taquería."

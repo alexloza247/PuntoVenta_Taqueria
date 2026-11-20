@@ -37,12 +37,13 @@ La computadora puede ser el servidor y las tablets conectarse a ella para mandar
 Si en la computadora de la taquería no quieres instalar Node.js, usa el ejecutable `taqueria-server.exe` (se genera con `build-exe.sh` y se entrega aparte; no está en GitHub porque es un binario):
 
 1. Pon en una misma carpeta de la computadora: `taqueria-server.exe` y `index.html` (el de este repositorio).
-2. Doble clic en `taqueria-server.exe`. La ventana imprime la dirección para esta computadora (`http://localhost:8080/`) y la dirección para tablets y celulares (algo como `http://192.168.1.50:8080/`). Deja esa ventana abierta mientras uses la app.
+2. Doble clic en `taqueria-server.exe`. La ventana muestra un mensaje de "Servidor listo", **abre automáticamente el navegador** con la app y también imprime la dirección para tablets y celulares (algo como `http://192.168.1.50:8080/`). Deja esa ventana abierta mientras uses la app.
 3. Abre esa dirección en el navegador de la computadora y en cada tablet (misma Wi-Fi), igual que con `node server.js`.
 
 Notas:
 
 - La primera vez Windows puede mostrar el aviso **"Windows protegió tu PC"**: toca **"Más información"** y luego **"Ejecutar de todas formas"**. Es normal con programas sin firmar.
+- Si algo falla, la ventana **ya no se cierra sola**: muestra el error en español y espera a que presiones Enter. Además todo queda registrado en el archivo **`server.log`** (en la misma carpeta del exe) — si algo sale mal, ese archivo dice qué pasó.
 - Los datos (`data.json` y su respaldo `data.json.bak`) se crean **junto al exe**, en la misma carpeta. Si mueves la carpeta, llévate también esos archivos para no perder los datos.
 - **Actualizar la app no requiere un exe nuevo:** el servidor lee `index.html` de la carpeta al momento, así que basta con **reemplazar `index.html`** por la versión nueva. Solo si cambia el servidor mismo se genera un exe nuevo.
 - Para compilar el exe (en una computadora con Node.js): `bash build-exe.sh` — deja el archivo en `dist/taqueria-server.exe`.
