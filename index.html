@@ -463,6 +463,11 @@
   .vs-card .vs-label { display: block; font-size: 12px; font-weight: 800; letter-spacing: .5px; text-transform: uppercase; color: var(--muted); }
   .vs-card .vs-value { display: block; font-size: 24px; font-weight: 900; color: var(--accent); font-variant-numeric: tabular-nums; margin-top: 4px; }
   .ventas-body { flex: 1; min-height: 0; overflow-y: auto; padding: 14px 20px; width: 100%; max-width: 1200px; margin: 0 auto; }
+  .ventas-daynav { display: flex; align-items: center; justify-content: center; gap: 12px; padding: 12px 20px 0; width: 100%; max-width: 1200px; margin: 0 auto; }
+  .vn-btn { border: 1px solid var(--border); background: var(--panel); color: var(--accent); font-size: 24px; font-weight: 800; width: 44px; height: 44px; border-radius: 10px; cursor: pointer; line-height: 1; padding: 0; }
+  .vn-btn:disabled { opacity: .35; cursor: not-allowed; }
+  .vn-label { font-size: 16px; font-weight: 800; color: var(--accent-d); min-width: 200px; text-align: center; }
+  .ventas-day { font-size: 15px; font-weight: 800; color: var(--accent); margin: 6px 0 10px; padding-bottom: 6px; border-bottom: 2px solid var(--border); }
   .venta-card {
     background: var(--panel);
     border: 1px solid var(--border);
@@ -909,6 +914,11 @@
     <div class="ventas-summary">
       <div class="vs-card"><span class="vs-label">Total vendido</span><span class="vs-value" id="ventasTotal">$0.00</span></div>
       <div class="vs-card"><span class="vs-label">Ventas</span><span class="vs-value" id="ventasCount">0</span></div>
+    </div>
+    <div class="ventas-daynav">
+      <button class="vn-btn" id="btnVentasPrev" aria-label="Día anterior">‹</button>
+      <span class="vn-label" id="ventasDayLabel">Hoy</span>
+      <button class="vn-btn" id="btnVentasNext" aria-label="Día siguiente">›</button>
     </div>
     <div class="ventas-body" id="ventasBody"></div>
     <div class="ventas-actions">
@@ -1602,20 +1612,41 @@ document.getElementById('btnCerrarCaja').addEventListener('click', () => {
   toast('Corte Z registrado: ' + fmt(totalSold) + ' vendidos');
 });
 
+/* ================= Ventas por día ================= */
+let ventasDay = null; // Date (medianoche local) del día seleccionado; null = hoy
+const DIAS_SEMANA = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+function startOfDay(d) { const x = new Date(d); x.setHours(0, 0, 0, 0); return x; }
+function dayKeyOf(iso) { const d = new Date(iso); return d.getFullYear() + '-' + d.getMonth() + '-' + d.getDate(); }
+function fmtDayLabel(d) {
+  const dd = String(d.getDate()).padStart(2, '0');
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const dateStr = dd + '/' + mm + '/' + d.getFullYear();
+  const isToday = dayKeyOf(d.toISOString()) === dayKeyOf(new Date().toISOString());
+  return isToday ? 'Hoy — ' + dateStr : DIAS_SEMANA[d.getDay()] + ' ' + dateStr;
+}
+
 /* ================= Ventas (pantalla) ================= */
 function renderVentas() {
   const body = document.getElementById('ventasBody');
   const totalEl = document.getElementById('ventasTotal');
   const countEl = document.getElementById('ventasCount');
-  const totalVendido = sales.reduce((a, v) => a + (Number(v.total) || 0), 0);
+  if (!ventasDay) ventasDay = startOfDay(new Date());
+  const dayKey = ventasDay.getFullYear() + '-' + ventasDay.getMonth() + '-' + ventasDay.getDate();
+  const isToday = dayKey === dayKeyOf(new Date().toISOString());
+  const daySales = sales.filter(v => dayKeyOf(v.datetime) === dayKey);
+  const totalVendido = daySales.reduce((a, v) => a + (Number(v.total) || 0), 0);
   if (totalEl) totalEl.textContent = fmt(totalVendido);
-  if (countEl) countEl.textContent = String(sales.length);
-  if (!sales.length) {
-    body.innerHTML = '<div class="ventas-empty">Todavía no hay ventas registradas.</div>';
+  if (countEl) countEl.textContent = String(daySales.length);
+  const labelEl = document.getElementById('ventasDayLabel');
+  if (labelEl) labelEl.textContent = fmtDayLabel(ventasDay);
+  const btnNext = document.getElementById('btnVentasNext');
+  if (btnNext) btnNext.disabled = isToday;
+  if (!daySales.length) {
+    body.innerHTML = '<div class="ventas-empty">' + (isToday ? 'Todavía no hay ventas registradas.' : 'No hay ventas este día.') + '</div>';
     return;
   }
-  let html = '';
-  [...sales].reverse().forEach(v => {
+  let html = '<div class="ventas-day">' + fmtDayLabel(ventasDay) + '</div>';
+  [...daySales].reverse().forEach(v => {
     const itemsHtml = v.items.map(i =>
       '<div class="vc-item"><span>' + i.qty + '× ' + escapeHtml(i.name) + '</span>' +
       (i.nota ? ' <span class="vc-nota">(' + escapeHtml(i.nota) + ')</span>' : '') + '</div>'
@@ -1637,6 +1668,20 @@ function renderVentas() {
   });
   body.innerHTML = html;
 }
+document.getElementById('btnVentasPrev').addEventListener('click', () => {
+  const d = new Date(ventasDay || startOfDay(new Date()));
+  d.setDate(d.getDate() - 1);
+  ventasDay = startOfDay(d);
+  renderVentas();
+});
+document.getElementById('btnVentasNext').addEventListener('click', () => {
+  const today = startOfDay(new Date());
+  const d = new Date(ventasDay || today);
+  d.setDate(d.getDate() + 1);
+  if (startOfDay(d).getTime() > today.getTime()) return;
+  ventasDay = startOfDay(d);
+  renderVentas();
+});
 document.getElementById('btnLimpiarVentas').addEventListener('click', () => {
   if (!sales.length) return;
   if (!confirm('¿Borrar todo el historial de ventas? Esta acción no se puede deshacer.')) return;
@@ -1659,7 +1704,7 @@ function showScreen(id, fromHash) {
   document.querySelectorAll('.screen').forEach(s => s.classList.toggle('hidden', s.id !== id));
   if (id === 'screenComandas') renderComandas();
   if (id === 'screenConfig') openConfig();
-  if (id === 'screenVentas') renderVentas();
+  if (id === 'screenVentas') { ventasDay = startOfDay(new Date()); renderVentas(); }
   if (id === 'screenHome') { updateHomeComandas(); refreshSessionBtns(); }
   if (!fromHash) {
     const target = '#' + (SCREEN_HASH[id] || 'inicio');
