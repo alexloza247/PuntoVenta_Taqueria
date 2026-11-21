@@ -591,9 +591,9 @@
     margin-bottom: 10px;
     box-shadow: 0 4px 12px rgba(20,50,30,.06);
   }
-  .comanda-card .c-head { display: flex; justify-content: space-between; align-items: baseline; font-weight: 900; margin-bottom: 6px; }
-  .comanda-card .c-time { color: var(--muted); font-weight: 600; font-size: 13px; }
-  .comanda-card .c-cliente { font-size: 15px; font-weight: 800; color: var(--accent); margin-bottom: 4px; }
+  .comanda-card .c-head { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; font-weight: 900; margin-bottom: 6px; }
+  .comanda-card .c-head > span:first-child { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .comanda-card .c-time { color: var(--muted); font-weight: 600; font-size: 13px; flex-shrink: 0; }
   .comanda-card .c-tipo { font-size: 14px; font-weight: 800; color: var(--accent-d); margin-bottom: 4px; }
   .comanda-card .c-detalles { font-size: 14px; font-style: italic; color: var(--muted); margin-bottom: 4px; }
   .comanda-card .c-item { display: flex; justify-content: space-between; font-size: 14px; padding: 2px 0 2px 14px; }
@@ -2477,11 +2477,11 @@ function comandaCard(c, isActiva) {
   const card = document.createElement('div');
   card.className = 'comanda-card';
   let itemsHtml = c.items.map(i => '<div class="c-item"><span>' + i.qty + '× ' + i.name + (i.nota ? ' — ' + escapeHtml(i.nota) : '') + '</span><span>' + fmt(i.subtotal) + '</span></div>').join('');
-  const clienteHtml = c.cliente ? '<div class="c-cliente">Cliente: ' + escapeHtml(c.cliente) + '</div>' : '';
+  const clienteSuffix = c.cliente ? ' · ' + escapeHtml(c.cliente) : '';
   const tipoHtml = c.tipo ? '<div class="c-tipo">' + (c.tipo === 'llevar' ? 'Para llevar' : 'Comer aquí') + '</div>' : '';
   const detallesHtml = c.detalles ? '<div class="c-detalles">Detalles: ' + escapeHtml(c.detalles) + '</div>' : '';
-  card.innerHTML = '<div class="c-head"><span>Comanda #' + c.id + '</span><span class="c-time">' + fmtDateTime(c.datetime) + '</span></div>' +
-    clienteHtml + tipoHtml + detallesHtml + itemsHtml + '<div class="c-total">' + fmt(c.total) + '</div>';
+  card.innerHTML = '<div class="c-head"><span>Comanda #' + c.id + clienteSuffix + '</span><span class="c-time">' + fmtDateTime(c.datetime) + '</span></div>' +
+    tipoHtml + detallesHtml + itemsHtml + '<div class="c-total">' + fmt(c.total) + '</div>';
   const btns = document.createElement('div');
   btns.className = 'c-btns';
   if (isActiva) {
