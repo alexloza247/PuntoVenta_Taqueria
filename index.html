@@ -1068,6 +1068,14 @@
           </div>
           <div id="retirosBody"></div>
         </div>
+        <div class="caja-blocked hidden" id="retirosBlocked">
+          <div class="cb-card">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            <div class="cb-title">La caja está cerrada</div>
+            <div class="cb-text">Abre la caja para registrar retiros.</div>
+            <button class="btn-ok" id="btnAbrirCajaRetiros">Apertura de caja</button>
+          </div>
+        </div>
       </section>
 
       <section id="screenConfig" class="screen hidden">
@@ -2002,7 +2010,7 @@ function refreshSessionBtns() {
   if (btnCorteCaja) btnCorteCaja.disabled = !session;
   document.querySelectorAll('.sb-nav-item').forEach(btn => {
     const scr = btn.dataset.screen;
-    const dis = (scr === 'screenPos' || scr === 'screenComandas') && !session;
+    const dis = (scr === 'screenPos' || scr === 'screenComandas' || scr === 'screenRetiros') && !session;
     btn.disabled = dis;
     btn.classList.toggle('disabled', dis);
   });
@@ -2010,6 +2018,8 @@ function refreshSessionBtns() {
   if (posB) posB.classList.toggle('hidden', !!session);
   const comB = document.getElementById('comandasBlocked');
   if (comB) comB.classList.toggle('hidden', !!session);
+  const retB = document.getElementById('retirosBlocked');
+  if (retB) retB.classList.toggle('hidden', !!session);
 }
 document.getElementById('btnApertura').addEventListener('click', () => {
   if (session) {
@@ -2355,7 +2365,7 @@ document.getElementById('btnCorteCaja').addEventListener('click', () => showOv('
 document.getElementById('btnCorteMenuX').addEventListener('click', () => { hideOv('ovCorteMenu'); openCorteX(); });
 document.getElementById('btnCorteMenuZ').addEventListener('click', () => { hideOv('ovCorteMenu'); openCorteZ(); });
 /* Botones de apertura desde las pantallas bloqueadas */
-['btnAbrirCajaPos', 'btnAbrirCajaComandas'].forEach(id => {
+['btnAbrirCajaPos', 'btnAbrirCajaComandas', 'btnAbrirCajaRetiros'].forEach(id => {
   const el = document.getElementById(id);
   if (el) el.addEventListener('click', () => document.getElementById('btnApertura').click());
 });
