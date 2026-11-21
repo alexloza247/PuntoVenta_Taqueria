@@ -578,6 +578,8 @@
   .venta-corte .vco-row { display: flex; justify-content: space-between; gap: 12px; padding: 4px 0; font-size: 15px; }
   .venta-corte .vco-row.total { border-top: 2px solid var(--border); margin-top: 6px; padding-top: 8px; font-weight: 900; }
   .venta-corte-pendiente { background: var(--panel2); border: 1px dashed var(--border); border-radius: 14px; padding: 14px 16px; margin-bottom: 14px; font-size: 15px; font-weight: 700; color: var(--muted); text-align: center; }
+  .ventas-vista-bar { display: flex; justify-content: flex-end; margin-bottom: 10px; }
+  .btn-vista { padding: 8px 16px; border-radius: 10px; border: 1px solid var(--border); background: var(--panel); color: var(--accent-d); font-size: 14px; font-weight: 800; cursor: pointer; min-height: 38px; }
   .ventas-empty { text-align: center; color: var(--muted); font-size: 16px; padding: 48px 16px; }
   .btn-link-danger {
     background: transparent;
@@ -1337,6 +1339,7 @@ const LS_TAB     = 'pvtaqueria_tab';
 const LS_CONFIG_TAB = 'pvtaqueria_config_tab';
 const LS_PRINTER = 'pvtaqueria_printer';
 const LS_DEVICES = 'pvtaqueria_devices';
+const LS_VENTAS_VISTA = 'pvtaqueria_ventas_vista';
 const LS_NOMBRE = 'pvtaqueria_nombre';
 const LS_SUCURSAL = 'pvtaqueria_sucursal';
 
@@ -2422,26 +2425,68 @@ function renderVentas() {
     return;
   }
   let html = '<div class="ventas-day">' + fmtDayLabel(ventasDay) + '</div>' + corteHtml;
-  /* Estadísticas por producto del día (con gráfica de barras) */
-  const prodStats = new Map();
+  /* Estadísticas del día: 3 gráficas (Tacos por carne, Bebidas por sabor, Otros) */
+  const gTacos = new Map(), gBebidas = new Map(), gOtros = new Map();
+  const prodById = new Map();
+  (catalog || []).forEach(cat => (cat.sections || []).forEach(sec => (sec.items || []).forEach(p => prodById.set(p.id, { catId: cat.id, secId: sec.id, name: p.name }))));
+  function addTo(map, key, qty, total) {
+    const cur = map.get(key) || { name: key, qty: 0, total: 0 };
+    cur.qty += qty; cur.total += total; map.set(key, cur);
+  }
   daySales.forEach(v => (v.items || []).forEach(i => {
-    const key = (i.name || i.id || '—');
-    const cur = prodStats.get(key) || { name: key, qty: 0, total: 0 };
-    cur.qty += Number(i.qty) || 0;
-    cur.total += Number(i.subtotal) || ((Number(i.qty) || 0) * (Number(i.price) || 0));
-    prodStats.set(key, cur);
+    const qty = Number(i.qty) || 0;
+    const subtotal = Number(i.subtotal) || (qty * (Number(i.price) || 0));
+    const info = prodById.get(i.id);
+    const catId = info ? info.catId : null;
+    const name = info ? info.name : (i.name || '—');
+    if (catId === 'tacos') {
+      const meatRaw = name.replace(/^Orden de /i, '').replace(/^Taco de /i, '');
+      const meat = meatRaw.charAt(0).toUpperCase() + meatRaw.slice(1);
+      const mult = (info && info.secId === 'ordenes') || /^Orden de /i.test(name) ? 4 : 1;
+      addTo(gTacos, meat, qty * mult, subtotal);
+    } else if (catId === 'bebidas') {
+      addTo(gBebidas, name, qty, subtotal);
+    } else if (catId === 'otros') {
+      addTo(gOtros, name, qty, subtotal);
+    } else {
+      const mOrd = /^Orden de (.+)$/i.exec(name);
+      const mTac = /^Taco de (.+)$/i.exec(name);
+      if (mOrd) { const meat = mOrd[1].charAt(0).toUpperCase() + mOrd[1].slice(1); addTo(gTacos, meat, qty * 4, subtotal); }
+      else if (mTac) { const meat = mTac[1].charAt(0).toUpperCase() + mTac[1].slice(1); addTo(gTacos, meat, qty, subtotal); }
+      else addTo(gOtros, name, qty, subtotal);
+    }
   }));
-  const stats = [...prodStats.values()].sort((a, b) => (b.qty - a.qty) || (b.total - a.total));
-  if (stats.length) {
-    const maxQty = Math.max(...stats.map(s => s.qty), 1);
-    html += '<div class="ventas-stats"><div class="vs-title">Resumen por producto</div>' +
-      stats.map(s => {
-        const pct = Math.max(4, Math.round((s.qty / maxQty) * 100));
-        return '<div class="vs-row"><div class="vs-line"><span class="vs-name">' + escapeHtml(s.name) + '</span>' +
-          '<span class="vs-val">' + s.qty + ' uds · ' + fmt(s.total) + '</span></div>' +
+  function chartBlock(title, map, unit) {
+    const rows = [...map.values()].sort((a, b) => (b.qty - a.qty) || (b.total - a.total));
+    if (!rows.length) return '';
+    const max = Math.max(...rows.map(r => r.qty), 1);
+    return '<div class="ventas-stats"><div class="vs-title">' + title + '</div>' +
+      rows.map(r => {
+        const pct = Math.max(4, Math.round((r.qty / max) * 100));
+        return '<div class="vs-row"><div class="vs-line"><span class="vs-name">' + escapeHtml(r.name) + '</span>' +
+          '<span class="vs-val">' + r.qty + ' ' + unit + ' · ' + fmt(r.total) + '</span></div>' +
           '<div class="vs-bar-wrap"><span class="vs-bar" style="width:' + pct + '%"></span></div></div>';
       }).join('') +
       '</div>';
+  }
+  function textBlock(title, map, unit) {
+    const rows = [...map.values()].sort((a, b) => (b.qty - a.qty) || (b.total - a.total));
+    if (!rows.length) return '';
+    return '<div class="ventas-stats"><div class="vs-title">' + title + '</div>' +
+      rows.map(r =>
+        '<div class="vs-row"><div class="vs-line"><span class="vs-name">' + escapeHtml(r.name) + '</span>' +
+        '<span class="vs-val">' + r.qty + ' ' + unit + ' · ' + fmt(r.total) + '</span></div></div>'
+      ).join('') +
+      '</div>';
+  }
+  const chartHtml = chartBlock('Tacos por carne', gTacos, 'tacos') + chartBlock('Bebidas por sabor', gBebidas, 'uds') + chartBlock('Otros', gOtros, 'uds');
+  const textHtml = textBlock('Tacos por carne', gTacos, 'tacos') + textBlock('Bebidas por sabor', gBebidas, 'uds') + textBlock('Otros', gOtros, 'uds');
+  if (chartHtml) {
+    const vista = load(LS_VENTAS_VISTA, 'graficas') === 'texto' ? 'texto' : 'graficas';
+    html += '<div class="ventas-vista-bar"><button type="button" id="btnVentasVista" class="btn-vista">' +
+      (vista === 'texto' ? 'Ver gráficas' : 'Ver en texto') + '</button></div>';
+    html += '<div id="ventasStatsGraficas"' + (vista === 'texto' ? ' class="hidden"' : '') + '>' + chartHtml + '</div>';
+    html += '<div id="ventasStatsTexto"' + (vista === 'graficas' ? ' class="hidden"' : '') + '>' + textHtml + '</div>';
   }
   [...daySales].reverse().forEach(v => {
     const itemsHtml = v.items.map(i =>
@@ -2465,6 +2510,17 @@ function renderVentas() {
       '</article>';
   });
   body.innerHTML = html;
+  const btnVista = document.getElementById('btnVentasVista');
+  if (btnVista) btnVista.addEventListener('click', () => {
+    const g = document.getElementById('ventasStatsGraficas');
+    const t = document.getElementById('ventasStatsTexto');
+    if (!g || !t) return;
+    const mostrandoTexto = !t.classList.contains('hidden');
+    g.classList.toggle('hidden', !mostrandoTexto);
+    t.classList.toggle('hidden', mostrandoTexto);
+    btnVista.textContent = mostrandoTexto ? 'Ver en texto' : 'Ver gráficas';
+    save(LS_VENTAS_VISTA, mostrandoTexto ? 'graficas' : 'texto');
+  });
 }
 document.getElementById('btnVentasPrev').addEventListener('click', () => {
   const d = new Date(ventasDay || startOfDay(new Date()));
