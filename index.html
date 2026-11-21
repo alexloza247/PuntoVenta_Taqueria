@@ -1647,7 +1647,7 @@ let sucursalSuffix = load(LS_SUCURSAL, null) || '';
 })();
 function nombreCompleto() {
   const s = String(sucursalSuffix || '').trim();
-  return s ? NOMBRE_BASE + ' - ' + s : NOMBRE_BASE;
+  return s ? NOMBRE_BASE + ' ' + s : NOMBRE_BASE;
 }
 let nombreSucursal = nombreCompleto();
 let printerSettings = load(LS_PRINTER, null) || { nombre: '', ancho: 80, autoPrint: false };
