@@ -501,7 +501,6 @@
 
   /* ---------- Pantalla de ventas ---------- */
   .ventas-wrap { flex: 1; min-height: 0; display: flex; flex-direction: column; }
-  .ventas-summary { display: flex; gap: 12px; padding: 14px 20px 0; width: 100%; max-width: 1200px; margin: 0 auto; }
   .vs-card {
     flex: 1; min-width: 0;
     background: var(--panel);
@@ -1125,10 +1124,6 @@
             <button class="vn-btn" id="btnVentasPrev" aria-label="Día anterior">‹</button>
             <button type="button" class="vn-label" id="ventasDayLabel" aria-label="Elegir día">Hoy</button>
             <button class="vn-btn" id="btnVentasNext" aria-label="Día siguiente">›</button>
-          </div>
-          <div class="ventas-summary">
-            <div class="vs-card"><span class="vs-label">Total vendido</span><span class="vs-value" id="ventasTotal">$0.00</span></div>
-            <div class="vs-card"><span class="vs-label">Ventas</span><span class="vs-value" id="ventasCount">0</span></div>
           </div>
           <div class="ventas-body" id="ventasBody"></div>
         </div>
@@ -2409,15 +2404,11 @@ document.getElementById('btnCalNext').addEventListener('click', () => {
 /* ================= Ventas (pantalla) ================= */
 function renderVentas() {
   const body = document.getElementById('ventasBody');
-  const totalEl = document.getElementById('ventasTotal');
-  const countEl = document.getElementById('ventasCount');
   if (!ventasDay) ventasDay = startOfDay(new Date());
   const dayKey = ventasDay.getFullYear() + '-' + ventasDay.getMonth() + '-' + ventasDay.getDate();
   const isToday = dayKey === dayKeyOf(new Date().toISOString());
   const daySales = sales.filter(v => dayKeyOf(v.datetime) === dayKey);
   const totalVendido = daySales.reduce((a, v) => a + (Number(v.total) || 0), 0);
-  if (totalEl) totalEl.textContent = fmt(totalVendido);
-  if (countEl) countEl.textContent = String(daySales.length);
   const labelEl = document.getElementById('ventasDayLabel');
   if (labelEl) labelEl.textContent = fmtDayLabel(ventasDay);
   const btnNext = document.getElementById('btnVentasNext');
