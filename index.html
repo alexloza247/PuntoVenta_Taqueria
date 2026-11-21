@@ -540,7 +540,19 @@
   .cal-day.has-sales::after { content: ''; position: absolute; bottom: 4px; left: 50%; transform: translateX(-50%); width: 5px; height: 5px; border-radius: 50%; background: var(--accent); }
   .cal-day.selected.has-sales::after { background: #fff; }
   .ventas-day { font-size: 15px; font-weight: 800; color: var(--accent); margin: 6px 0 10px; padding-bottom: 6px; border-bottom: 2px solid var(--border); }
-  .ventas-stats { background: var(--panel); border: 1px solid var(--border); border-radius: 14px; padding: 14px 16px; margin-bottom: 14px; }
+  .ventas-stats { background: var(--panel); border: 1px solid var(--border); border-radius: 14px; padding: 14px 16px; margin-bottom: 14px; cursor: pointer; }
+  .cz-box { max-width: 640px; }
+  .ventas-stats.vs-big { cursor: default; }
+  .ventas-stats.vs-big .vs-chart { flex: none; height: 320px; }
+  .ventas-stats.vs-big .vs-col-track { padding-top: 56px; }
+  .ventas-stats.vs-big .vs-col-bar { max-width: 56px; }
+  .ventas-stats.vs-big .vs-col-val { font-size: 18px; }
+  .ventas-stats.vs-big .vs-col-amt { font-size: 15px; }
+  .ventas-stats.vs-big .vs-col-name { font-size: 15px; }
+  .ventas-stats.vs-big .vs-title { font-size: 20px; }
+  .ventas-stats.vs-big .vs-row { padding: 12px 0; }
+  .ventas-stats.vs-big .vs-name, .ventas-stats.vs-big .vs-val { font-size: 18px; }
+  .ventas-stats.vs-big .vs-empty { padding: 100px 10px; }
   .ventas-stats .vs-title { font-size: 17px; font-weight: 900; color: var(--accent); margin-bottom: 10px; }
   .ventas-stats .vs-row { padding: 9px 0; border-bottom: 1px solid var(--border); }
   .ventas-stats .vs-row:last-child { border-bottom: none; padding-bottom: 2px; }
@@ -1259,6 +1271,16 @@
     <div class="modal-btns">
       <button class="btn-cancel" data-close="ovTicketPreview">Cancelar</button>
       <button class="btn-ok" id="btnConfirmarComanda">Confirmar comanda</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Gráfica ampliada -->
+<div class="overlay" id="ovChartZoom">
+  <div class="modal cz-box">
+    <div id="chartZoomBody"></div>
+    <div class="modal-btns">
+      <button class="btn-cancel" data-close="ovChartZoom">Cerrar</button>
     </div>
   </div>
 </div>
@@ -2403,6 +2425,35 @@ document.getElementById('btnCalNext').addEventListener('click', () => {
 });
 
 /* ================= Ventas (pantalla) ================= */
+let ventasChartData = {};
+let ventasVistas = {};
+function wireChartToggles(container) {
+  container.querySelectorAll('.btn-vista').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const key = btn.dataset.chart;
+      const card = btn.closest('.ventas-stats');
+      if (!card) return;
+      const g = card.querySelector('.vs-grafica');
+      const t = card.querySelector('.vs-texto');
+      if (!g || !t) return;
+      const mostrandoTexto = !t.classList.contains('hidden');
+      g.classList.toggle('hidden', !mostrandoTexto);
+      t.classList.toggle('hidden', mostrandoTexto);
+      btn.textContent = mostrandoTexto ? 'Ver en texto' : 'Ver gráfica';
+      const vistas = load(LS_VENTAS_VISTAS, {}) || {};
+      vistas[key] = mostrandoTexto ? 'graficas' : 'texto';
+      save(LS_VENTAS_VISTAS, vistas);
+      ventasVistas = vistas;
+      const other = document.querySelector('#ventasBody .ventas-stats[data-chart="' + key + '"]');
+      if (other && other !== card) {
+        other.querySelector('.vs-grafica').classList.toggle('hidden', !mostrandoTexto);
+        other.querySelector('.vs-texto').classList.toggle('hidden', mostrandoTexto);
+        const ob = other.querySelector('.btn-vista');
+        if (ob) ob.textContent = mostrandoTexto ? 'Ver en texto' : 'Ver gráfica';
+      }
+    });
+  });
+}
 function renderVentas() {
   const body = document.getElementById('ventasBody');
   if (!ventasDay) ventasDay = startOfDay(new Date());
@@ -2467,12 +2518,18 @@ function renderVentas() {
       else addTo(gOtros, name, qty, subtotal);
     }
   }));
-  const ventasVistas = load(LS_VENTAS_VISTAS, {}) || {};
+  ventasVistas = load(LS_VENTAS_VISTAS, {}) || {};
   const maxItems = Math.max(gTacos.size, gBebidas.size, gOtros.size, 1);
   const fixedH = Math.max(160, maxItems * 44 + 12);
-  function chartBlock(title, map, unit, key) {
+  ventasChartData = {
+    tacos: { title: 'Tacos', map: gTacos, unit: 'tacos' },
+    bebidas: { title: 'Bebidas', map: gBebidas, unit: 'uds' },
+    otros: { title: 'Otros', map: gOtros, unit: 'uds' }
+  };
+  function chartBlock(title, map, unit, key, big) {
     const rows = [...map.values()].sort((a, b) => (b.qty - a.qty) || (b.total - a.total));
     const vista = ventasVistas[key] === 'texto' ? 'texto' : 'graficas';
+    const hStyle = big ? '' : ' style="height:' + fixedH + 'px"';
     let graficaHtml, textoHtml;
     if (!rows.length) {
       graficaHtml = '<div class="vs-empty">Sin ventas este día</div>';
@@ -2498,12 +2555,18 @@ function renderVentas() {
         '<span class="vs-val">' + r.qty + ' ' + unit + ' · ' + fmt(r.total) + '</span></div></div>'
       ).join('');
     }
-    return '<div class="ventas-stats" data-chart="' + key + '">' +
+    return '<div class="ventas-stats' + (big ? ' vs-big' : '') + '" data-chart="' + key + '">' +
       '<div class="vs-head"><div class="vs-title">' + title + '</div>' +
       '<button type="button" class="btn-vista" data-chart="' + key + '">' + (vista === 'texto' ? 'Ver gráfica' : 'Ver en texto') + '</button></div>' +
-      '<div class="' + (vista === 'texto' ? 'vs-grafica hidden' : 'vs-grafica') + '" style="height:' + fixedH + 'px">' + graficaHtml + '</div>' +
-      '<div class="' + (vista === 'graficas' ? 'vs-texto hidden' : 'vs-texto') + '" style="height:' + fixedH + 'px">' + textoHtml + '</div>' +
+      '<div class="' + (vista === 'texto' ? 'vs-grafica hidden' : 'vs-grafica') + '"' + hStyle + '>' + graficaHtml + '</div>' +
+      '<div class="' + (vista === 'graficas' ? 'vs-texto hidden' : 'vs-texto') + '"' + hStyle + '>' + textoHtml + '</div>' +
       '</div>';
+  }
+  function openChartZoom(d, key) {
+    const zoomBody = document.getElementById('chartZoomBody');
+    zoomBody.innerHTML = chartBlock(d.title, d.map, d.unit, key, true);
+    wireChartToggles(zoomBody);
+    showOv('ovChartZoom');
   }
   html += '<div class="ventas-charts">' +
     chartBlock('Tacos', gTacos, 'tacos', 'tacos') +
@@ -2532,21 +2595,13 @@ function renderVentas() {
       '</article>';
   });
   body.innerHTML = html;
-  document.querySelectorAll('#ventasBody .btn-vista').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const key = btn.dataset.chart;
-      const card = btn.closest('.ventas-stats');
-      if (!card) return;
-      const g = card.querySelector('.vs-grafica');
-      const t = card.querySelector('.vs-texto');
-      if (!g || !t) return;
-      const mostrandoTexto = !t.classList.contains('hidden');
-      g.classList.toggle('hidden', !mostrandoTexto);
-      t.classList.toggle('hidden', mostrandoTexto);
-      btn.textContent = mostrandoTexto ? 'Ver en texto' : 'Ver gráfica';
-      const vistas = load(LS_VENTAS_VISTAS, {}) || {};
-      vistas[key] = mostrandoTexto ? 'graficas' : 'texto';
-      save(LS_VENTAS_VISTAS, vistas);
+  wireChartToggles(body);
+  body.querySelectorAll('.ventas-stats').forEach(card => {
+    card.addEventListener('click', (ev) => {
+      if (ev.target.closest('.btn-vista')) return;
+      const d = ventasChartData[card.dataset.chart];
+      if (!d) return;
+      openChartZoom(d, card.dataset.chart);
     });
   });
 }
