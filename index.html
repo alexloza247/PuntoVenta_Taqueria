@@ -550,11 +550,12 @@
   .ventas-stats .vs-bar { display: block; height: 100%; background: var(--accent-l); border-radius: 8px; min-width: 4px; }
   .ventas-stats .vs-chart { display: flex; align-items: stretch; gap: 10px; flex: 1; min-height: 0; }
   .ventas-stats .vs-col { flex: 1; min-width: 0; display: flex; flex-direction: column; }
-  .ventas-stats .vs-col-val { font-size: 15px; font-weight: 900; color: var(--accent); text-align: center; white-space: nowrap; }
-  .ventas-stats .vs-col-amt { font-size: 13px; font-weight: 800; color: var(--accent-d); text-align: center; margin: 2px 0 6px; white-space: nowrap; }
-  .ventas-stats .vs-col-track { flex: 1; display: flex; align-items: flex-end; justify-content: center; }
-  .ventas-stats .vs-col-bar { display: block; width: 100%; max-width: 28px; background: var(--accent-l); border-radius: 8px 8px 0 0; min-height: 4px; }
-  .ventas-stats .vs-col-name { font-size: 13px; font-weight: 700; text-align: center; margin-top: 8px; line-height: 1.2; }
+  .ventas-stats .vs-col-track { flex: 1; display: flex; align-items: flex-end; justify-content: center; padding-top: 48px; min-height: 0; }
+  .ventas-stats .vs-col-bar { position: relative; display: block; width: 100%; max-width: 28px; background: var(--accent-l); border-radius: 8px 8px 0 0; min-height: 4px; }
+  .ventas-stats .vs-col-top { position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%); margin-bottom: 4px; text-align: center; white-space: nowrap; }
+  .ventas-stats .vs-col-val { display: block; font-size: 15px; font-weight: 900; color: var(--accent); }
+  .ventas-stats .vs-col-amt { display: block; font-size: 13px; font-weight: 800; color: var(--accent-d); margin-top: 2px; }
+  .ventas-stats .vs-col-name { font-size: 12px; font-weight: 700; text-align: center; margin-top: 8px; line-height: 1.2; }
   .ventas-stats .vs-empty { text-align: center; color: var(--muted); font-size: 14px; font-weight: 700; padding: 64px 10px; }
   .ventas-stats .vs-val { font-size: 16px; font-weight: 900; color: var(--accent); white-space: nowrap; }
   .venta-card {
@@ -589,7 +590,7 @@
   .ventas-stats .vs-head .vs-title { margin-bottom: 0; }
   .btn-vista { padding: 5px 10px; border-radius: 8px; border: 1px solid var(--border); background: var(--panel); color: var(--accent-d); font-size: 12px; font-weight: 800; cursor: pointer; min-height: 30px; white-space: nowrap; }
   .ventas-stats .vs-grafica.hidden, .ventas-stats .vs-texto.hidden { display: none; }
-  .ventas-stats .vs-grafica { display: flex; flex-direction: column; overflow-y: auto; }
+  .ventas-stats .vs-grafica { display: flex; flex-direction: column; overflow-x: hidden; overflow-y: auto; }
   .ventas-stats .vs-texto { overflow-y: auto; }
   .ventas-charts { display: flex; gap: 14px; align-items: flex-start; }
   .ventas-charts .ventas-stats { flex: 1; min-width: 0; }
@@ -2483,9 +2484,10 @@ function renderVentas() {
           const pct = Math.max(4, Math.round((r.qty / max) * 100));
           const mAgua = /^Agua de (.+)$/i.exec(r.name);
           const label = mAgua ? (mAgua[1].charAt(0).toUpperCase() + mAgua[1].slice(1)) : r.name;
-          return '<div class="vs-col"><span class="vs-col-val">' + r.qty + ' ' + unit + '</span>' +
-            '<span class="vs-col-amt">' + fmt(r.total) + '</span>' +
-            '<div class="vs-col-track"><span class="vs-col-bar" style="height:' + pct + '%"></span></div>' +
+          return '<div class="vs-col">' +
+            '<div class="vs-col-track"><span class="vs-col-bar" style="height:' + pct + '%">' +
+            '<span class="vs-col-top"><span class="vs-col-val">' + r.qty + ' ' + unit + '</span>' +
+            '<span class="vs-col-amt">' + fmt(r.total) + '</span></span></span></div>' +
             '<span class="vs-col-name">' + escapeHtml(label) + '</span></div>';
         }).join('') +
         '</div>';
