@@ -54,18 +54,18 @@
     flex-direction: column;
     align-items: center;
     text-align: center;
-    gap: 5px;
-    padding: 14px 14px 11px;
+    gap: 6px;
+    padding: 16px 14px 13px;
     border-bottom: 1px solid rgba(255,255,255,.14);
   }
   .sb-logo {
-    width: 54px; height: 54px;
+    width: 64px; height: 64px;
     border-radius: 50%;
     object-fit: cover;
     border: 2px solid rgba(255,255,255,.7);
     background: #fff;
   }
-  .sb-name { font-size: 17px; font-weight: 800; line-height: 1.2; color: #fff; }
+  .sb-name { font-size: 18px; font-weight: 800; line-height: 1.2; color: #fff; }
   .sb-caja {
     display: inline-flex; align-items: center; gap: 7px;
     font-size: 13px; font-weight: 700; color: #f0b4b4;
@@ -73,27 +73,27 @@
   .sb-caja .dot { width: 9px; height: 9px; border-radius: 50%; background: #e5484d; flex-shrink: 0; }
   .sb-caja.open { color: #9be7b4; }
   .sb-caja.open .dot { background: #3ddc84; }
-  .sb-nav { display: flex; flex-direction: column; padding: 10px 10px 14px; gap: 2px; }
+  .sb-nav { flex: 1; display: flex; flex-direction: column; justify-content: space-between; padding: 12px 10px 16px; }
   .sb-sec {
-    font-size: 10.5px; font-weight: 800; letter-spacing: 1.2px;
+    font-size: 11px; font-weight: 800; letter-spacing: 1.2px;
     color: #8fb89a; text-transform: uppercase;
-    margin: 11px 8px 4px;
+    margin: 14px 8px 5px;
   }
   .sb-sec:first-child { margin-top: 2px; }
   .sb-item {
-    display: flex; align-items: center; gap: 9px;
+    display: flex; align-items: center; gap: 10px;
     width: 100%;
-    padding: 8px 10px;
+    padding: 10px 12px;
     border: none; border-radius: 10px;
     background: transparent;
     color: #dcebe0;
     font-family: inherit;
-    font-size: 14.5px; font-weight: 600;
+    font-size: 15px; font-weight: 600;
     text-align: left;
     cursor: pointer;
-    min-height: 38px;
+    min-height: 42px;
   }
-  .sb-item svg { width: 18px; height: 18px; flex-shrink: 0; }
+  .sb-item svg { width: 20px; height: 20px; flex-shrink: 0; }
   .sb-item:hover { background: rgba(255,255,255,.09); }
   .sb-item.active {
     background: var(--green-bright);
@@ -197,15 +197,15 @@
   #comandasActivas .empty-state, #comandasCompletadas .empty-state { text-align: center; }
   .sec-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(168px, 1fr));
-    gap: 12px;
+    grid-template-columns: repeat(auto-fill, minmax(176px, 1fr));
+    gap: 14px;
     margin-bottom: 6px;
   }
   .tile {
     border: none;
     border-radius: 12px;
-    padding: 12px 14px 11px;
-    min-height: 104px;
+    padding: 14px 16px 13px;
+    min-height: 124px;
     display: flex;
     flex-direction: column;
     align-items: flex-start;
@@ -220,8 +220,8 @@
   }
   .tile:hover { filter: brightness(1.06); }
   .tile:active { transform: scale(.96); }
-  .tile .price { font-size: 24px; font-weight: 800; }
-  .tile .name { font-size: 17px; font-weight: 700; line-height: 1.15; overflow-wrap: break-word; }
+  .tile .price { font-size: 26px; font-weight: 800; }
+  .tile .name { font-size: 18px; font-weight: 700; line-height: 1.15; overflow-wrap: break-word; }
   .tile .qty-badge {
     align-self: flex-end;
     background: rgba(0,0,0,.45);
@@ -235,7 +235,7 @@
 
   /* ---------- Ticket ---------- */
   .ticket {
-    width: 384px;
+    width: 400px;
     flex-shrink: 0;
     min-height: 0;
     background: var(--panel);
@@ -283,7 +283,7 @@
   .ticket-foot { padding: 12px 16px 16px; border-top: 1px solid var(--border); }
   .total-row { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 12px; }
   .total-row .lbl { color: var(--muted); font-size: 16px; font-weight: 700; }
-  .total-row .val { font-size: 30px; font-weight: 900; font-variant-numeric: tabular-nums; color: var(--accent-d); }
+  .total-row .val { font-size: 32px; font-weight: 900; font-variant-numeric: tabular-nums; color: var(--accent-d); }
   .ticket-btns { display: flex; gap: 10px; }
   .btn-clear {
     padding: 14px 16px;
@@ -921,8 +921,8 @@
   #printTicket .pt-foot { text-align: center; font-size: 12px; margin-top: 8px; }
 
   @media (max-width: 1100px) {
-    :root { --sidebar-w: 208px; }
-    .ticket { width: 330px; }
+    :root { --sidebar-w: 216px; }
+    .ticket { width: 350px; }
     .sec-grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
   }
   @media (max-width: 900px) {
