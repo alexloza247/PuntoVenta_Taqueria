@@ -555,7 +555,7 @@
   .ventas-stats .vs-col-top { position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%); margin-bottom: 4px; text-align: center; white-space: nowrap; }
   .ventas-stats .vs-col-val { display: block; font-size: 15px; font-weight: 900; color: var(--accent); }
   .ventas-stats .vs-col-amt { display: block; font-size: 13px; font-weight: 800; color: var(--accent-d); margin-top: 2px; }
-  .ventas-stats .vs-col-name { font-size: 12px; font-weight: 700; text-align: center; margin-top: 8px; line-height: 1.2; }
+  .ventas-stats .vs-col-name { writing-mode: vertical-rl; font-size: 12px; font-weight: 700; margin-top: 8px; line-height: 1.2; max-height: 120px; overflow: hidden; align-self: center; }
   .ventas-stats .vs-empty { text-align: center; color: var(--muted); font-size: 14px; font-weight: 700; padding: 64px 10px; }
   .ventas-stats .vs-val { font-size: 16px; font-weight: 900; color: var(--accent); white-space: nowrap; }
   .venta-card {
@@ -2469,7 +2469,7 @@ function renderVentas() {
   }));
   const ventasVistas = load(LS_VENTAS_VISTAS, {}) || {};
   const maxItems = Math.max(gTacos.size, gBebidas.size, gOtros.size, 1);
-  const fixedH = Math.max(160, maxItems * 44 + 12);
+  const fixedH = Math.max(200, maxItems * 44 + 12);
   function chartBlock(title, map, unit, key) {
     const rows = [...map.values()].sort((a, b) => (b.qty - a.qty) || (b.total - a.total));
     const vista = ventasVistas[key] === 'texto' ? 'texto' : 'graficas';
