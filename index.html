@@ -549,7 +549,7 @@
   .ventas-stats .vs-name { font-size: 16px; font-weight: 800; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .ventas-stats .vs-bar-wrap { background: var(--panel2); border-radius: 8px; height: 18px; overflow: hidden; }
   .ventas-stats .vs-bar { display: block; height: 100%; background: var(--accent-l); border-radius: 8px; min-width: 4px; }
-  .ventas-stats .vs-chart { display: flex; align-items: stretch; gap: 10px; height: 180px; }
+  .ventas-stats .vs-chart { display: flex; align-items: stretch; gap: 10px; flex: 1; min-height: 0; }
   .ventas-stats .vs-col { flex: 1; min-width: 0; display: flex; flex-direction: column; }
   .ventas-stats .vs-col-val { font-size: 15px; font-weight: 900; color: var(--accent); text-align: center; white-space: nowrap; }
   .ventas-stats .vs-col-amt { font-size: 13px; font-weight: 800; color: var(--accent-d); text-align: center; margin: 2px 0 6px; white-space: nowrap; }
@@ -590,7 +590,8 @@
   .ventas-stats .vs-head .vs-title { margin-bottom: 0; }
   .btn-vista { padding: 5px 10px; border-radius: 8px; border: 1px solid var(--border); background: var(--panel); color: var(--accent-d); font-size: 12px; font-weight: 800; cursor: pointer; min-height: 30px; white-space: nowrap; }
   .ventas-stats .vs-grafica.hidden, .ventas-stats .vs-texto.hidden { display: none; }
-  .ventas-stats .vs-grafica, .ventas-stats .vs-texto { height: 260px; overflow-y: auto; }
+  .ventas-stats .vs-grafica { display: flex; flex-direction: column; overflow-y: auto; }
+  .ventas-stats .vs-texto { overflow-y: auto; }
   .ventas-charts { display: flex; gap: 14px; align-items: flex-start; }
   .ventas-charts .ventas-stats { flex: 1; min-width: 0; }
   @media (max-width: 900px) { .ventas-charts { flex-direction: column; } }
@@ -2475,6 +2476,8 @@ function renderVentas() {
     }
   }));
   const ventasVistas = load(LS_VENTAS_VISTAS, {}) || {};
+  const maxItems = Math.max(gTacos.size, gBebidas.size, gOtros.size, 1);
+  const fixedH = Math.max(160, maxItems * 44 + 12);
   function chartBlock(title, map, unit, key) {
     const rows = [...map.values()].sort((a, b) => (b.qty - a.qty) || (b.total - a.total));
     const vista = ventasVistas[key] === 'texto' ? 'texto' : 'graficas';
@@ -2503,8 +2506,8 @@ function renderVentas() {
     return '<div class="ventas-stats" data-chart="' + key + '">' +
       '<div class="vs-head"><div class="vs-title">' + title + '</div>' +
       '<button type="button" class="btn-vista" data-chart="' + key + '">' + (vista === 'texto' ? 'Ver gráfica' : 'Ver en texto') + '</button></div>' +
-      '<div class="' + (vista === 'texto' ? 'vs-grafica hidden' : 'vs-grafica') + '">' + graficaHtml + '</div>' +
-      '<div class="' + (vista === 'graficas' ? 'vs-texto hidden' : 'vs-texto') + '">' + textoHtml + '</div>' +
+      '<div class="' + (vista === 'texto' ? 'vs-grafica hidden' : 'vs-grafica') + '" style="height:' + fixedH + 'px">' + graficaHtml + '</div>' +
+      '<div class="' + (vista === 'graficas' ? 'vs-texto hidden' : 'vs-texto') + '" style="height:' + fixedH + 'px">' + textoHtml + '</div>' +
       '</div>';
   }
   html += '<div class="ventas-charts">' +
