@@ -554,25 +554,30 @@
     background: var(--panel);
     border: 1px solid var(--border);
     border-radius: var(--radius);
-    padding: 14px 16px;
-    margin-bottom: 12px;
+    padding: 10px 12px;
+    margin-bottom: 8px;
     box-shadow: 0 4px 12px rgba(20,50,30,.06);
   }
-  .venta-card .vc-head { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; margin-bottom: 6px; }
-  .venta-card .vc-total { font-size: 21px; font-weight: 900; color: var(--accent); font-variant-numeric: tabular-nums; }
+  .venta-card .vc-head { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; margin-bottom: 4px; }
+  .venta-card .vc-total { font-size: 18px; font-weight: 900; color: var(--accent); font-variant-numeric: tabular-nums; }
   .venta-card .vc-time { color: var(--muted); font-size: 13px; font-weight: 600; white-space: nowrap; }
-  .venta-card .vc-cliente { font-size: 15px; font-weight: 800; color: var(--accent-d); margin-bottom: 4px; }
-  .venta-card .vc-items { font-size: 14px; line-height: 1.5; }
+  .venta-card .vc-cliente { font-size: 14px; font-weight: 800; color: var(--accent-d); margin-bottom: 3px; }
+  .venta-card .vc-items { font-size: 13px; line-height: 1.4; }
   .venta-card .vc-nota { font-style: italic; color: var(--muted); }
-  .venta-card .vc-detalles { font-size: 14px; font-style: italic; color: var(--muted); margin-top: 4px; }
-  .venta-card .vc-foot { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+  .venta-card .vc-detalles { font-size: 13px; font-style: italic; color: var(--muted); margin-top: 3px; }
+  .venta-card .vc-foot { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
   .vc-badge {
-    font-size: 12px; font-weight: 700;
-    padding: 4px 10px; border-radius: 999px;
+    font-size: 11px; font-weight: 700;
+    padding: 3px 8px; border-radius: 999px;
     background: var(--panel2); color: var(--accent-d);
     border: 1px solid var(--border);
   }
   .vc-badge.warn { background: #fdecec; color: #b91c1c; border-color: #f3c6c6; }
+  .venta-corte { background: var(--panel); border: 1px solid var(--border); border-radius: 14px; padding: 14px 16px; margin-bottom: 14px; }
+  .venta-corte .vco-title { font-size: 17px; font-weight: 900; color: var(--accent); margin-bottom: 10px; }
+  .venta-corte .vco-row { display: flex; justify-content: space-between; gap: 12px; padding: 4px 0; font-size: 15px; }
+  .venta-corte .vco-row.total { border-top: 2px solid var(--border); margin-top: 6px; padding-top: 8px; font-weight: 900; }
+  .venta-corte-pendiente { background: var(--panel2); border: 1px dashed var(--border); border-radius: 14px; padding: 14px 16px; margin-bottom: 14px; font-size: 15px; font-weight: 700; color: var(--muted); text-align: center; }
   .ventas-empty { text-align: center; color: var(--muted); font-size: 16px; padding: 48px 16px; }
   .btn-link-danger {
     background: transparent;
@@ -2399,11 +2404,24 @@ function renderVentas() {
   if (labelEl) labelEl.textContent = fmtDayLabel(ventasDay);
   const btnNext = document.getElementById('btnVentasNext');
   if (btnNext) btnNext.disabled = isToday;
+  /* Corte Z del día: si ya se hizo se muestra; si no, aviso de que hace falta */
+  const corteZDelDia = [...cortes].reverse().find(c => corteType(c) === 'Z' && c.closedAt && dayKeyOf(c.closedAt) === dayKey);
+  let corteHtml = '';
+  if (corteZDelDia) {
+    corteHtml = '<div class="venta-corte"><div class="vco-title">Corte de caja Z</div>' +
+      '<div class="vco-row"><span>Fecha del corte</span><b>' + fmtDateTime(corteZDelDia.closedAt) + '</b></div>' +
+      '<div class="vco-row"><span>Fondo inicial</span><b>' + fmt(corteZDelDia.opening || 0) + '</b></div>' +
+      '<div class="vco-row"><span>Ventas</span><b>' + (corteZDelDia.salesCount != null ? corteZDelDia.salesCount : daySales.length) + '</b></div>' +
+      '<div class="vco-row"><span>Total vendido</span><b>' + fmt(corteZDelDia.totalSold != null ? corteZDelDia.totalSold : totalVendido) + '</b></div>' +
+      '<div class="vco-row total"><span>Efectivo esperado</span><b>' + fmt(corteZDelDia.expectedCash != null ? corteZDelDia.expectedCash : totalVendido) + '</b></div></div>';
+  } else if (daySales.length) {
+    corteHtml = '<div class="venta-corte-pendiente">Aún no se ha realizado el Corte Z de este día. Es necesario hacer el corte de caja para poder verlo.</div>';
+  }
   if (!daySales.length) {
-    body.innerHTML = '<div class="ventas-empty">' + (isToday ? 'Todavía no hay ventas registradas.' : 'No hay ventas este día.') + '</div>';
+    body.innerHTML = corteHtml + '<div class="ventas-empty">' + (isToday ? 'Todavía no hay ventas registradas.' : 'No hay ventas este día.') + '</div>';
     return;
   }
-  let html = '<div class="ventas-day">' + fmtDayLabel(ventasDay) + '</div>';
+  let html = '<div class="ventas-day">' + fmtDayLabel(ventasDay) + '</div>' + corteHtml;
   /* Estadísticas por producto del día (con gráfica de barras) */
   const prodStats = new Map();
   daySales.forEach(v => (v.items || []).forEach(i => {
