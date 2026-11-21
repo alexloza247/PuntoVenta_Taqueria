@@ -2492,7 +2492,7 @@ function renderVentas() {
   } else if (daySales.length) {
     corteHtml = '<div class="venta-corte-pendiente">Aún no se ha realizado el Corte Z de este día. Es necesario hacer el corte de caja para poder verlo.</div>';
   }
-  let resumenHtml = '<div class="ventas-day">' + fmtDayLabel(ventasDay) + '</div>' + corteHtml;
+  let resumenHtml = corteHtml;
   /* Estadísticas del día: 3 gráficas (Tacos por carne, Bebidas por sabor, Otros) */
   const gTacos = new Map(), gBebidas = new Map(), gOtros = new Map();
   const prodById = new Map();
