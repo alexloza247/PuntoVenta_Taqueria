@@ -1217,16 +1217,18 @@
 const CATALOG_DEFAULTS = [
   { id: 'tacos', label: 'Tacos', sections: [
     { id: 'ordenes', label: 'Órdenes', items: [
-      { id: 'suadero',    name: 'Orden de suadero',    price: 130, color: '#1e5631' },
-      { id: 'cuero',      name: 'Orden de cuero',      price: 130, color: '#276749' },
-      { id: 'adobada',    name: 'Orden de adobada',    price: 130, color: '#2f855a' },
-      { id: 'campechano', name: 'Orden de campechano', price: 130, color: '#38a169' },
+      { id: 'suadero',    name: 'Orden de suadero',    price: 140, color: '#1e5631' },
+      { id: 'cuero',      name: 'Orden de cuero',      price: 140, color: '#276749' },
+      { id: 'adobada',    name: 'Orden de adobada',    price: 140, color: '#2f855a' },
+      { id: 'buche',      name: 'Orden de buche',      price: 140, color: '#43a047' },
+      { id: 'campechano', name: 'Orden de campechano', price: 140, color: '#38a169' },
     ]},
     { id: 'individual', label: 'Taco individual', items: [
-      { id: 'suadero-ind',    name: 'Taco de suadero',    price: 32.50, color: '#1e5631' },
-      { id: 'cuero-ind',      name: 'Taco de cuero',      price: 32.50, color: '#276749' },
-      { id: 'adobada-ind',    name: 'Taco de adobada',    price: 32.50, color: '#2f855a' },
-      { id: 'campechano-ind', name: 'Taco de campechano', price: 32.50, color: '#38a169' },
+      { id: 'suadero-ind',    name: 'Taco de suadero',    price: 35, color: '#1e5631' },
+      { id: 'cuero-ind',      name: 'Taco de cuero',      price: 35, color: '#276749' },
+      { id: 'adobada-ind',    name: 'Taco de adobada',    price: 35, color: '#2f855a' },
+      { id: 'buche-ind',      name: 'Taco de buche',      price: 35, color: '#43a047' },
+      { id: 'campechano-ind', name: 'Taco de campechano', price: 35, color: '#38a169' },
     ]},
   ]},
   { id: 'bebidas', label: 'Bebidas', sections: [
@@ -1247,6 +1249,38 @@ const CATALOG_DEFAULTS = [
     ]},
   ]},
 ];
+
+// Migración de catálogo: órdenes $130->$140, tacos $32.50->$35 y agrega buche antes del
+// campechano. Solo toca precios con el valor viejo, así respeta precios personalizados.
+function migrateCatalogo(cat) {
+  if (!Array.isArray(cat)) return false;
+  let changed = false;
+  for (const c of cat) {
+    if (!c || !Array.isArray(c.sections)) continue;
+    for (const sec of c.sections) {
+      if (!sec || !Array.isArray(sec.items)) continue;
+      const isOrdenes = sec.id === 'ordenes';
+      const isIndividual = sec.id === 'individual';
+      if (!isOrdenes && !isIndividual) continue;
+      const oldPrice = isOrdenes ? 130 : 32.5;
+      const newPrice = isOrdenes ? 140 : 35;
+      sec.items.forEach(p => {
+        if (p && p.price === oldPrice) { p.price = newPrice; changed = true; }
+      });
+      const bucheId = isOrdenes ? 'buche' : 'buche-ind';
+      if (!sec.items.some(p => p && p.id === bucheId)) {
+        const buche = isOrdenes
+          ? { id: 'buche', name: 'Orden de buche', price: 140, color: '#43a047' }
+          : { id: 'buche-ind', name: 'Taco de buche', price: 35, color: '#43a047' };
+        const idx = sec.items.findIndex(p => p && p.id === (isOrdenes ? 'campechano' : 'campechano-ind'));
+        if (idx >= 0) sec.items.splice(idx, 0, buche);
+        else sec.items.push(buche);
+        changed = true;
+      }
+    }
+  }
+  return changed;
+}
 
 /* ================= Estado ================= */
 const LS_SALES   = 'pvtaqueria_sales';
@@ -1337,7 +1371,7 @@ function normalizeServerUrl(u) {
 
 function setStateVars(state) {
   if (!state || typeof state !== 'object') return;
-  if (state.catalog) catalog = state.catalog;
+  if (state.catalog) { catalog = state.catalog; migrateCatalogo(catalog); }
   comandas = state.comandas || [];
   comandaSeq = state.comandaSeq || 0;
   sales = state.sales || [];
@@ -1620,6 +1654,7 @@ if (!catalog) {
     save(LS_CATALOG, catalog);
   }
 }
+if (migrateCatalogo(catalog)) save(LS_CATALOG, catalog);
 
 let ticket = {};           // productId -> qty (persiste entre recargas)
 let ticketCliente = '';    // nombre del cliente (opcional)
