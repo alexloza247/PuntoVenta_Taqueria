@@ -374,6 +374,13 @@
     padding: 22px;
   }
   .modal h3 { font-size: 21px; margin-bottom: 14px; color: var(--accent); }
+  .tpv-line { font-size: 15px; margin-bottom: 8px; overflow-wrap: break-word; }
+  .tpv-items { border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); padding: 8px 0; margin: 10px 0; }
+  .tpv-row { display: flex; justify-content: space-between; gap: 10px; font-size: 15px; padding: 3px 0; }
+  .tpv-row > span:first-child { min-width: 0; overflow-wrap: break-word; }
+  .tpv-row > span:last-child { flex-shrink: 0; font-weight: 700; }
+  .tpv-nota { color: var(--muted); font-size: 13px; }
+  .tpv-total { display: flex; justify-content: space-between; align-items: baseline; font-size: 19px; font-weight: 900; color: var(--accent-d); margin-top: 12px; }
   .modal .big-total { font-size: 38px; font-weight: 900; margin: 6px 0 14px; font-variant-numeric: tabular-nums; }
   .field label { display: block; color: var(--muted); font-weight: 700; font-size: 14px; margin-bottom: 6px; }
   .field input {
@@ -1221,6 +1228,18 @@
   </div>
 </div>
 
+<!-- Modal Vista previa del ticket -->
+<div class="overlay" id="ovTicketPreview">
+  <div class="modal">
+    <h3>Vista previa del ticket</h3>
+    <div id="ticketPreviewBody"></div>
+    <div class="modal-btns">
+      <button class="btn-cancel" data-close="ovTicketPreview">Cancelar</button>
+      <button class="btn-ok" id="btnConfirmarComanda">Confirmar comanda</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <div id="printTicket"></div>
@@ -1947,9 +1966,34 @@ document.getElementById('btnVaciar').addEventListener('click', () => {
   if (selTicketTipo) selTicketTipo.value = 'aqui';
   refreshAll();
 });
+function buildTicketPreviewHtml() {
+  const ids = Object.keys(ticket).filter(id => ticket[id] > 0 && productById(id));
+  let rows = ids.map(id => {
+    const p = productById(id);
+    const nota = (ticketNotas[id] || '').trim();
+    return '<div class="tpv-row"><span>' + ticket[id] + '× ' + escapeHtml(p.name) +
+      (nota ? ' <span class="tpv-nota">(' + escapeHtml(nota) + ')</span>' : '') +
+      '</span><span>' + fmt(p.price * ticket[id]) + '</span></div>';
+  }).join('');
+  const cliente = ticketCliente.trim();
+  const detalles = ticketDetalles.trim();
+  let html = '';
+  if (cliente) html += '<div class="tpv-line"><b>Cliente:</b> ' + escapeHtml(cliente) + '</div>';
+  html += '<div class="tpv-line"><b>Tipo:</b> ' + (ticketTipo === 'llevar' ? 'Para llevar' : 'Comer aquí') + '</div>';
+  html += '<div class="tpv-items">' + rows + '</div>';
+  if (detalles) html += '<div class="tpv-line"><b>Detalles:</b> ' + escapeHtml(detalles) + '</div>';
+  html += '<div class="tpv-total"><span>Total</span><span>' + fmt(ticketTotal()) + '</span></div>';
+  return html;
+}
 document.getElementById('btnComanda').addEventListener('click', () => {
   const ids = Object.keys(ticket).filter(id => ticket[id] > 0 && productById(id));
   if (!ids.length) return;
+  document.getElementById('ticketPreviewBody').innerHTML = buildTicketPreviewHtml();
+  showOv('ovTicketPreview');
+});
+document.getElementById('btnConfirmarComanda').addEventListener('click', () => {
+  const ids = Object.keys(ticket).filter(id => ticket[id] > 0 && productById(id));
+  if (!ids.length) { hideOv('ovTicketPreview'); return; }
   const items = ids.map(id => {
     const p = productById(id);
     const it = { id: p.id, name: p.name, price: p.price, qty: ticket[id], subtotal: p.price * ticket[id] };
@@ -1981,6 +2025,7 @@ document.getElementById('btnComanda').addEventListener('click', () => {
   if (selTicketTipo) selTicketTipo.value = 'aqui';
   refreshAll();
   if (Sync.mode !== 'connected') updateHomeComandas();
+  hideOv('ovTicketPreview');
 });
 
 /* ================= Cobrar ================= */
