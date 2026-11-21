@@ -385,14 +385,24 @@
     font-family: inherit;
   }
   .field textarea.txt:focus { outline: none; border-color: var(--accent); }
-  .ticket-cliente { padding: 0 16px 10px; }
+  .ticket-cliente { display: flex; align-items: center; gap: 8px; padding: 0 16px 10px; }
+  .ticket-cliente .tc-icon { width: 20px; height: 20px; color: var(--muted); flex-shrink: 0; }
   .ticket-cliente input, .ticket-detalles input {
-    width: 100%; box-sizing: border-box;
+    flex: 1; min-width: 0; box-sizing: border-box;
     font-size: 16px; font-weight: 600; font-family: inherit;
     padding: 10px 12px; border-radius: 10px;
     border: 2px solid var(--border); background: var(--panel2); color: var(--text);
   }
   .ticket-cliente input:focus, .ticket-detalles input:focus { outline: none; border-color: var(--accent); }
+  .ticket-tipo { padding: 0 16px 10px; }
+  .ticket-tipo select {
+    width: 100%; box-sizing: border-box;
+    font-size: 16px; font-weight: 700; font-family: inherit;
+    padding: 10px 12px; border-radius: 10px;
+    border: 2px solid var(--border); background: var(--panel2); color: var(--text);
+    cursor: pointer;
+  }
+  .ticket-tipo select:focus { outline: none; border-color: var(--accent); }
   .t-det-btn {
     align-self: flex-start;
     margin-left: 14px;
@@ -575,6 +585,7 @@
   .comanda-card .c-head { display: flex; justify-content: space-between; align-items: baseline; font-weight: 900; margin-bottom: 8px; }
   .comanda-card .c-time { color: var(--muted); font-weight: 600; font-size: 13px; }
   .comanda-card .c-cliente { font-size: 15px; font-weight: 800; color: var(--accent); margin-bottom: 6px; }
+  .comanda-card .c-tipo { font-size: 14px; font-weight: 800; color: var(--accent-d); margin-bottom: 6px; }
   .comanda-card .c-detalles { font-size: 14px; font-style: italic; color: var(--muted); margin-bottom: 6px; }
   .comanda-card .c-item { display: flex; justify-content: space-between; font-size: 14px; padding: 3px 0; }
   .comanda-card .c-total { text-align: right; font-weight: 900; font-size: 18px; color: var(--accent); margin: 8px 0; }
@@ -991,7 +1002,14 @@
           <aside class="ticket">
             <h2>Ticket</h2>
             <div class="ticket-cliente">
+              <svg class="tc-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
               <input id="inpTicketCliente" type="text" placeholder="Nombre del cliente (opcional)" maxlength="60">
+            </div>
+            <div class="ticket-tipo">
+              <select id="selTicketTipo">
+                <option value="aqui">Comer aquí</option>
+                <option value="llevar">Para llevar</option>
+              </select>
             </div>
             <div class="ticket-items" id="ticketItems"></div>
             <div class="ticket-foot">
@@ -1607,6 +1625,7 @@ let ticket = {};           // productId -> qty (persiste entre recargas)
 let ticketCliente = '';    // nombre del cliente (opcional)
 let ticketDetalles = '';   // detalles generales (opcional)
 let ticketNotas = {};      // productId -> nota por producto (opcional)
+let ticketTipo = 'aqui';   // 'aqui' | 'llevar'
 (function loadTicketState() {
   const saved = load(LS_TICKET, null);
   if (saved && typeof saved === 'object' && saved.items && typeof saved.items === 'object') {
@@ -1614,6 +1633,7 @@ let ticketNotas = {};      // productId -> nota por producto (opcional)
     ticketCliente = saved.cliente || '';
     ticketDetalles = saved.detalles || '';
     ticketNotas = saved.notas || {};
+    ticketTipo = saved.tipo === 'llevar' ? 'llevar' : 'aqui';
   } else if (saved && typeof saved === 'object') {
     ticket = saved; // formato viejo: { productId: qty }
   }
@@ -1854,7 +1874,7 @@ function renderTicket() {
 function saveTicket() {
   Object.keys(ticket).forEach(id => { if (!productById(id) || !(ticket[id] > 0)) { delete ticket[id]; delete ticketNotas[id]; } });
   Object.keys(ticketNotas).forEach(id => { if (!ticket[id]) delete ticketNotas[id]; });
-  save(LS_TICKET, { items: ticket, cliente: ticketCliente, detalles: ticketDetalles, notas: ticketNotas });
+  save(LS_TICKET, { items: ticket, cliente: ticketCliente, detalles: ticketDetalles, notas: ticketNotas, tipo: ticketTipo });
 }
 function refreshAll() { renderGrid(); renderTicket(); saveTicket(); }
 function addToTicket(id) { ticket[id] = (ticket[id] || 0) + 1; refreshAll(); }
@@ -1867,10 +1887,16 @@ const inpTicketCliente = document.getElementById('inpTicketCliente');
 const inpTicketDetalles = document.getElementById('inpTicketDetalles');
 inpTicketCliente.addEventListener('input', () => { ticketCliente = inpTicketCliente.value; saveTicket(); });
 inpTicketDetalles.addEventListener('input', () => { ticketDetalles = inpTicketDetalles.value; saveTicket(); });
+const selTicketTipo = document.getElementById('selTicketTipo');
+if (selTicketTipo) {
+  selTicketTipo.value = ticketTipo;
+  selTicketTipo.addEventListener('change', () => { ticketTipo = selTicketTipo.value === 'llevar' ? 'llevar' : 'aqui'; saveTicket(); });
+}
 document.getElementById('btnVaciar').addEventListener('click', () => {
   if (!Object.keys(ticket).length && !ticketCliente && !ticketDetalles && !Object.keys(ticketNotas).length) return;
-  ticket = {}; ticketCliente = ''; ticketDetalles = ''; ticketNotas = {};
+  ticket = {}; ticketCliente = ''; ticketDetalles = ''; ticketNotas = {}; ticketTipo = 'aqui';
   inpTicketCliente.value = ''; inpTicketDetalles.value = '';
+  if (selTicketTipo) selTicketTipo.value = 'aqui';
   refreshAll();
 });
 document.getElementById('btnComanda').addEventListener('click', () => {
@@ -1885,7 +1911,7 @@ document.getElementById('btnComanda').addEventListener('click', () => {
   });
   const nombre = ticketCliente.trim();
   const detalles = ticketDetalles.trim();
-  const comandaData = { datetime: nowISO(), items: items, total: ticketTotal(), status: 'activa' };
+  const comandaData = { datetime: nowISO(), items: items, total: ticketTotal(), status: 'activa', tipo: ticketTipo };
   if (nombre) comandaData.cliente = nombre;
   if (detalles) comandaData.detalles = detalles;
   if (Sync.mode === 'connected') {
@@ -1902,8 +1928,9 @@ document.getElementById('btnComanda').addEventListener('click', () => {
     save(LS_COMANDA_SEQ, comandaSeq);
     toast('Comanda #' + comandaSeq + ' creada');
   }
-  ticket = {}; ticketCliente = ''; ticketDetalles = ''; ticketNotas = {};
+  ticket = {}; ticketCliente = ''; ticketDetalles = ''; ticketNotas = {}; ticketTipo = 'aqui';
   inpTicketCliente.value = ''; inpTicketDetalles.value = '';
+  if (selTicketTipo) selTicketTipo.value = 'aqui';
   refreshAll();
   if (Sync.mode !== 'connected') updateHomeComandas();
 });
@@ -1970,6 +1997,7 @@ document.getElementById('btnConfirmarCobro').addEventListener('click', () => {
   };
   if (comanda.cliente) venta.cliente = comanda.cliente;
   if (comanda.detalles) venta.detalles = comanda.detalles;
+  if (comanda.tipo) venta.tipo = comanda.tipo;
   if (Sync.mode === 'connected') {
     Sync.send('comanda.pay', { id: comanda.id, venta }).then(r => {
       if (!r) return;
@@ -2286,6 +2314,7 @@ function renderVentas() {
     const clienteHtml = v.cliente ? '<div class="vc-cliente">Cliente: ' + escapeHtml(v.cliente) + '</div>' : '';
     const detallesHtml = v.detalles ? '<div class="vc-detalles">Detalles: ' + escapeHtml(v.detalles) + '</div>' : '';
     const badges =
+      (v.tipo ? '<span class="vc-badge">' + (v.tipo === 'llevar' ? 'Para llevar' : 'Comer aquí') + '</span>' : '') +
       '<span class="vc-badge">Recibido ' + fmt(v.received) + '</span>' +
       '<span class="vc-badge">Cambio ' + fmt(v.change) + '</span>' +
       (v.sessionOpen ? '' : '<span class="vc-badge warn">Sin sesión</span>');
@@ -2385,9 +2414,10 @@ function comandaCard(c, isActiva) {
   card.className = 'comanda-card';
   let itemsHtml = c.items.map(i => '<div class="c-item"><span>' + i.qty + '× ' + i.name + (i.nota ? ' — ' + escapeHtml(i.nota) : '') + '</span><span>' + fmt(i.subtotal) + '</span></div>').join('');
   const clienteHtml = c.cliente ? '<div class="c-cliente">Cliente: ' + escapeHtml(c.cliente) + '</div>' : '';
+  const tipoHtml = c.tipo ? '<div class="c-tipo">' + (c.tipo === 'llevar' ? 'Para llevar' : 'Comer aquí') + '</div>' : '';
   const detallesHtml = c.detalles ? '<div class="c-detalles">Detalles: ' + escapeHtml(c.detalles) + '</div>' : '';
   card.innerHTML = '<div class="c-head"><span>Comanda #' + c.id + '</span><span class="c-time">' + fmtDateTime(c.datetime) + '</span></div>' +
-    clienteHtml + detallesHtml + itemsHtml + '<div class="c-total">' + fmt(c.total) + '</div>';
+    clienteHtml + tipoHtml + detallesHtml + itemsHtml + '<div class="c-total">' + fmt(c.total) + '</div>';
   const btns = document.createElement('div');
   btns.className = 'c-btns';
   if (isActiva) {
@@ -2903,7 +2933,8 @@ function buildPrintTicketHtml(sale, esPrueba) {
   const items = sale.items.map(i => '<div class="pt-row"><span>' + i.qty + 'x ' + escapeHtml(i.name) + '</span><span>' + fmt(i.subtotal) + '</span></div>').join('');
   return '<div class="pt-head"><div class="pt-title">' + escapeHtml(nombreCompleto()) + '</div>' +
     (printerSettings.nombre ? '<div class="pt-sub">' + escapeHtml(printerSettings.nombre) + '</div>' : '') +
-    '<div class="pt-sub">' + (esPrueba ? 'Ticket de prueba' : fmtDateTime(sale.datetime)) + '</div></div>' +
+    '<div class="pt-sub">' + (esPrueba ? 'Ticket de prueba' : fmtDateTime(sale.datetime)) + '</div>' +
+    (sale.tipo ? '<div class="pt-sub">' + (sale.tipo === 'llevar' ? 'Para llevar' : 'Comer aquí') + '</div>' : '') + '</div>' +
     '<div class="pt-line"></div>' + items + '<div class="pt-line"></div>' +
     '<div class="pt-row pt-total"><span>Total</span><span>' + fmt(sale.total) + '</span></div>' +
     '<div class="pt-row"><span>Recibido</span><span>' + fmt(sale.received) + '</span></div>' +
