@@ -268,18 +268,18 @@
     flex-shrink: 0;
   }
   .qbtn {
-    width: 46px; height: 40px;
+    width: 38px; height: 36px;
     border: none; background: transparent;
     color: var(--text);
-    font-size: 20px; font-weight: 800;
+    font-size: 19px; font-weight: 800;
     cursor: pointer;
     display: flex; align-items: center; justify-content: center;
   }
   .qbtn:active { background: #d7e8dc; }
   .trow2 .tqty {
-    min-width: 46px;
+    min-width: 38px;
     display: flex; align-items: center; justify-content: center;
-    text-align: center; font-weight: 800; font-size: 16px;
+    text-align: center; font-weight: 800; font-size: 15px;
     border-left: 1px solid var(--border);
     border-right: 1px solid var(--border);
   }
@@ -405,9 +405,10 @@
     border: 2px solid var(--border); background: var(--panel2); color: var(--text);
   }
   .ticket-cliente input:focus, .ticket-detalles input:focus { outline: none; border-color: var(--accent); }
-  .ticket-tipo { padding: 0 16px 10px 44px; }
+  .ticket-tipo { display: flex; align-items: center; gap: 8px; padding: 0 16px 10px; }
+  .ticket-tipo .tt-icon { width: 20px; height: 20px; color: var(--muted); flex-shrink: 0; }
   .ticket-tipo select {
-    width: 100%; box-sizing: border-box;
+    flex: 1; min-width: 0; box-sizing: border-box;
     font-size: 16px; font-weight: 700; font-family: inherit;
     padding: 10px 12px; border-radius: 10px;
     border: 2px solid var(--border); background: var(--panel2); color: var(--text);
@@ -1017,6 +1018,7 @@
               <input id="inpTicketCliente" type="text" placeholder="Nombre del cliente (opcional)" maxlength="60">
             </div>
             <div class="ticket-tipo">
+              <svg class="tt-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"/></svg>
               <select id="selTicketTipo">
                 <option value="aqui">Comer aquí</option>
                 <option value="llevar">Para llevar</option>
