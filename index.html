@@ -848,9 +848,11 @@
     cursor: pointer; min-height: 44px;
   }
   .btn-print-test:disabled { opacity: .45; cursor: not-allowed; }
+  .sucursal-row { display: flex; gap: 10px; align-items: stretch; }
+  .printer-field .sucursal-row input[type="text"] { width: auto; flex: 1; min-width: 0; }
   .btn-guardar-general {
-    width: 50%;
-    padding: 10px 14px;
+    width: auto; flex-shrink: 0;
+    padding: 10px 22px;
     border-radius: 12px; border: none;
     background: var(--accent); color: #fff;
     font-size: 15px; font-weight: 900;
@@ -2619,8 +2621,9 @@ function renderGeneral() {
   inp.value = sucursalSuffix;
   inp.placeholder = 'Ej. Allende';
   inp.maxLength = 80;
-  f.appendChild(inp);
-  sec.appendChild(f);
+  const row = document.createElement('div');
+  row.className = 'sucursal-row';
+  row.appendChild(inp);
   const btnSave = document.createElement('button');
   btnSave.className = 'btn-guardar-general';
   btnSave.textContent = 'Guardar';
@@ -2630,7 +2633,9 @@ function renderGeneral() {
     applyNombreSucursal();
     toast('Nombre actualizado');
   });
-  sec.appendChild(btnSave);
+  row.appendChild(btnSave);
+  f.appendChild(row);
+  sec.appendChild(f);
   body.appendChild(sec);
 
   const secH = document.createElement('div');
