@@ -555,6 +555,10 @@
   .ventas-stats.vs-big .vs-row { padding: 12px 0; }
   .ventas-stats.vs-big .vs-name, .ventas-stats.vs-big .vs-val { font-size: 18px; }
   .ventas-stats.vs-big .vs-empty { padding: 100px 10px; }
+  .ventas-tabs { display: flex; gap: 8px; margin-bottom: 14px; }
+  .vt-btn { flex: 1; min-height: 44px; border: 2px solid var(--border); background: var(--panel); color: var(--muted); font-size: 15px; font-weight: 800; border-radius: 12px; cursor: pointer; }
+  .vt-btn.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .ventas-pane.hidden { display: none; }
   .ventas-stats .vs-title { font-size: 17px; font-weight: 900; color: var(--accent); margin-bottom: 10px; }
   .ventas-stats .vs-row { padding: 9px 0; border-bottom: 1px solid var(--border); }
   .ventas-stats .vs-row:last-child { border-bottom: none; padding-bottom: 2px; }
@@ -1378,6 +1382,7 @@ const LS_CONFIG_TAB = 'pvtaqueria_config_tab';
 const LS_PRINTER = 'pvtaqueria_printer';
 const LS_DEVICES = 'pvtaqueria_devices';
 const LS_VENTAS_VISTAS = 'pvtaqueria_ventas_vistas';
+const LS_VENTAS_TAB = 'pvtaqueria_ventas_tab';
 const LS_NOMBRE = 'pvtaqueria_nombre';
 const LS_SUCURSAL = 'pvtaqueria_sucursal';
 
@@ -2487,11 +2492,7 @@ function renderVentas() {
   } else if (daySales.length) {
     corteHtml = '<div class="venta-corte-pendiente">Aún no se ha realizado el Corte Z de este día. Es necesario hacer el corte de caja para poder verlo.</div>';
   }
-  if (!daySales.length) {
-    body.innerHTML = corteHtml + '<div class="ventas-empty">' + (isToday ? 'Todavía no hay ventas registradas.' : 'No hay ventas este día.') + '</div>';
-    return;
-  }
-  let html = '<div class="ventas-day">' + fmtDayLabel(ventasDay) + '</div>' + corteHtml;
+  let resumenHtml = '<div class="ventas-day">' + fmtDayLabel(ventasDay) + '</div>' + corteHtml;
   /* Estadísticas del día: 3 gráficas (Tacos por carne, Bebidas por sabor, Otros) */
   const gTacos = new Map(), gBebidas = new Map(), gOtros = new Map();
   const prodById = new Map();
@@ -2573,11 +2574,12 @@ function renderVentas() {
     wireChartToggles(zoomBody);
     showOv('ovChartZoom');
   }
-  html += '<div class="ventas-charts">' +
+  resumenHtml += '<div class="ventas-charts">' +
     chartBlock('Tacos', gTacos, 'tacos', 'tacos') +
     chartBlock('Bebidas', gBebidas, 'uds', 'bebidas') +
     chartBlock('Otros', gOtros, 'uds', 'otros') +
     '</div>';
+  let movimientosHtml = '';
   [...daySales].reverse().forEach(v => {
     const itemsHtml = v.items.map(i =>
       '<div class="vc-item"><span>' + i.qty + '× ' + escapeHtml(i.name) + '</span>' +
@@ -2590,7 +2592,7 @@ function renderVentas() {
       '<span class="vc-badge">Recibido ' + fmt(v.received) + '</span>' +
       '<span class="vc-badge">Cambio ' + fmt(v.change) + '</span>' +
       (v.sessionOpen ? '' : '<span class="vc-badge warn">Sin sesión</span>');
-    html += '<article class="venta-card">' +
+    movimientosHtml += '<article class="venta-card">' +
       '<div class="vc-head"><span class="vc-total">' + fmt(v.total) + '</span>' +
       '<span class="vc-time">' + fmtDateTime(v.datetime) + '</span></div>' +
       clienteHtml +
@@ -2599,7 +2601,15 @@ function renderVentas() {
       '<div class="vc-foot">' + badges + '</div>' +
       '</article>';
   });
-  body.innerHTML = html;
+  if (!daySales.length) movimientosHtml = '<div class="ventas-empty">' + (isToday ? 'Todavía no hay ventas registradas.' : 'No hay ventas este día.') + '</div>';
+  const activeTab = load(LS_VENTAS_TAB, 'resumen') === 'ventas' ? 'ventas' : 'resumen';
+  body.innerHTML =
+    '<div class="ventas-tabs">' +
+      '<button type="button" class="vt-btn' + (activeTab === 'resumen' ? ' active' : '') + '" data-vtab="resumen">Resumen</button>' +
+      '<button type="button" class="vt-btn' + (activeTab === 'ventas' ? ' active' : '') + '" data-vtab="ventas">Movimientos</button>' +
+    '</div>' +
+    '<div class="ventas-pane' + (activeTab === 'resumen' ? '' : ' hidden') + '" id="ventasPaneResumen">' + resumenHtml + '</div>' +
+    '<div class="ventas-pane' + (activeTab === 'ventas' ? '' : ' hidden') + '" id="ventasPaneVentas">' + movimientosHtml + '</div>';
   wireChartToggles(body);
   body.querySelectorAll('.ventas-stats').forEach(card => {
     card.addEventListener('click', (ev) => {
@@ -2607,6 +2617,15 @@ function renderVentas() {
       const d = ventasChartData[card.dataset.chart];
       if (!d) return;
       openChartZoom(d, card.dataset.chart);
+    });
+  });
+  body.querySelectorAll('.vt-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const tab = btn.dataset.vtab;
+      body.querySelectorAll('.vt-btn').forEach(b => b.classList.toggle('active', b === btn));
+      document.getElementById('ventasPaneResumen').classList.toggle('hidden', tab !== 'resumen');
+      document.getElementById('ventasPaneVentas').classList.toggle('hidden', tab !== 'ventas');
+      save(LS_VENTAS_TAB, tab);
     });
   });
 }
