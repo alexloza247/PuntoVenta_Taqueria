@@ -642,7 +642,7 @@
   .retiros-empty { text-align: center; color: var(--muted); font-size: 16px; padding: 40px 16px; }
 
   /* ---------- Configuración ---------- */
-  .config-body { flex: 1; overflow-y: auto; padding: 14px 20px 96px; width: 100%; max-width: 1200px; margin: 0 auto; }
+  .config-body { flex: 1; min-height: 0; overflow-y: auto; padding: 14px 20px 96px; width: 100%; max-width: 1200px; margin: 0 auto; }
   .config-body.hidden { display: none; }
   .config-body h2 { font-size: 19px; color: var(--accent); margin: 16px 0 8px; }
   .config-body h2:first-child { margin-top: 0; }
@@ -732,7 +732,16 @@
   .cfg-add-box:active { background: #dcebe1; }
   .config-foot { padding: 12px 20px; border-top: 1px solid var(--border); width: 100%; max-width: 1200px; margin: 0 auto; }
   /* ---------- Pestañas de Configuración ---------- */
-  .config-tabs { display: flex; gap: 8px; padding: 12px 20px 0; width: 100%; max-width: 1200px; margin: 0 auto; }
+  .config-tabs {
+    display: flex; gap: 8px;
+    padding: 12px 20px;
+    width: 100%; max-width: 1200px; margin: 0 auto;
+    background: var(--bg);
+    border-bottom: 2px solid var(--border);
+    flex-shrink: 0;
+    position: relative;
+    z-index: 5;
+  }
   .config-tab {
     flex: 1; padding: 12px 8px;
     border-radius: 10px; border: 1px solid var(--border);
@@ -838,6 +847,15 @@
     cursor: pointer; min-height: 44px;
   }
   .btn-print-test:disabled { opacity: .45; cursor: not-allowed; }
+  .btn-guardar-general {
+    width: 50%;
+    padding: 10px 14px;
+    border-radius: 12px; border: none;
+    background: var(--accent); color: #fff;
+    font-size: 15px; font-weight: 900;
+    cursor: pointer; min-height: 44px;
+    display: block;
+  }
   .btn-conectar-impresora {
     width: 50%;
     margin-left: auto;
@@ -2603,7 +2621,7 @@ function renderGeneral() {
   f.appendChild(inp);
   sec.appendChild(f);
   const btnSave = document.createElement('button');
-  btnSave.className = 'btn-print-test';
+  btnSave.className = 'btn-guardar-general';
   btnSave.textContent = 'Guardar';
   btnSave.addEventListener('click', () => {
     sucursalSuffix = inp.value.trim();
@@ -2612,10 +2630,6 @@ function renderGeneral() {
     toast('Nombre actualizado');
   });
   sec.appendChild(btnSave);
-  const note = document.createElement('div');
-  note.className = 'dev-note';
-  note.textContent = 'Más opciones próximamente';
-  sec.appendChild(note);
   body.appendChild(sec);
 
   const secH = document.createElement('div');
