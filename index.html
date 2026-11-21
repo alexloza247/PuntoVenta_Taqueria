@@ -807,6 +807,7 @@
     cursor: pointer;
   }
   .dev-note { font-size: 13px; color: var(--muted); line-height: 1.45; margin-top: 10px; }
+  .hist-note { font-size: 14px; font-weight: 600; color: var(--text); line-height: 1.5; margin: 0 0 12px; }
   .printer-field { margin-bottom: 12px; }
   .printer-field label { display: block; font-size: 14px; font-weight: 700; color: var(--muted); margin-bottom: 6px; }
   .printer-field input[type="text"], .printer-field select {
@@ -2637,6 +2638,10 @@ function renderGeneral() {
   const hH = document.createElement('h3');
   hH.textContent = 'Historial de ventas';
   secH.appendChild(hH);
+  const noteH = document.createElement('div');
+  noteH.className = 'hist-note';
+  noteH.textContent = 'Esto borra todas las ventas registradas, de todos los días. Solo los dispositivos con permiso de Configuración pueden hacerlo.';
+  secH.appendChild(noteH);
   const btnClear = document.createElement('button');
   btnClear.className = 'btn-link-danger';
   btnClear.textContent = 'Borrar historial';
@@ -2654,10 +2659,6 @@ function renderGeneral() {
     }
   });
   secH.appendChild(btnClear);
-  const noteH = document.createElement('div');
-  noteH.className = 'dev-note';
-  noteH.textContent = 'Borra todas las ventas registradas, de todos los días. Solo pueden hacerlo los dispositivos con permiso de Configuración.';
-  secH.appendChild(noteH);
   body.appendChild(secH);
 }
 
