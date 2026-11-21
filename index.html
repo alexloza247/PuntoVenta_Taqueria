@@ -541,13 +541,15 @@
   .cal-day.has-sales::after { content: ''; position: absolute; bottom: 4px; left: 50%; transform: translateX(-50%); width: 5px; height: 5px; border-radius: 50%; background: var(--accent); }
   .cal-day.selected.has-sales::after { background: #fff; }
   .ventas-day { font-size: 15px; font-weight: 800; color: var(--accent); margin: 6px 0 10px; padding-bottom: 6px; border-bottom: 2px solid var(--border); }
-  .ventas-stats { background: var(--panel); border: 1px solid var(--border); border-radius: 14px; padding: 14px 16px; margin-bottom: 14px; }
-  .ventas-stats .vs-title { font-size: 16px; font-weight: 900; color: var(--accent); margin-bottom: 10px; }
-  .ventas-stats .vs-row { display: grid; grid-template-columns: minmax(110px, 1fr) 2fr auto; align-items: center; gap: 10px; padding: 4px 0; font-size: 14px; }
-  .ventas-stats .vs-name { font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .ventas-stats .vs-bar-wrap { background: var(--panel2); border-radius: 8px; height: 18px; overflow: hidden; }
+  .ventas-stats { background: var(--panel); border: 1px solid var(--border); border-radius: 14px; padding: 16px 18px; margin-bottom: 14px; }
+  .ventas-stats .vs-title { font-size: 19px; font-weight: 900; color: var(--accent); margin-bottom: 12px; }
+  .ventas-stats .vs-row { padding: 12px 0; border-bottom: 1px solid var(--border); }
+  .ventas-stats .vs-row:last-child { border-bottom: none; padding-bottom: 2px; }
+  .ventas-stats .vs-line { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; margin-bottom: 9px; }
+  .ventas-stats .vs-name { font-size: 18px; font-weight: 800; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .ventas-stats .vs-bar-wrap { background: var(--panel2); border-radius: 8px; height: 24px; overflow: hidden; }
   .ventas-stats .vs-bar { display: block; height: 100%; background: var(--accent-l); border-radius: 8px; min-width: 4px; }
-  .ventas-stats .vs-val { font-weight: 800; color: var(--accent); white-space: nowrap; }
+  .ventas-stats .vs-val { font-size: 18px; font-weight: 900; color: var(--accent); white-space: nowrap; }
   .venta-card {
     background: var(--panel);
     border: 1px solid var(--border);
@@ -2417,9 +2419,9 @@ function renderVentas() {
     html += '<div class="ventas-stats"><div class="vs-title">Resumen por producto</div>' +
       stats.map(s => {
         const pct = Math.max(4, Math.round((s.qty / maxQty) * 100));
-        return '<div class="vs-row"><span class="vs-name">' + escapeHtml(s.name) + '</span>' +
-          '<span class="vs-bar-wrap"><span class="vs-bar" style="width:' + pct + '%"></span></span>' +
-          '<span class="vs-val">' + s.qty + ' uds · ' + fmt(s.total) + '</span></div>';
+        return '<div class="vs-row"><div class="vs-line"><span class="vs-name">' + escapeHtml(s.name) + '</span>' +
+          '<span class="vs-val">' + s.qty + ' uds · ' + fmt(s.total) + '</span></div>' +
+          '<div class="vs-bar-wrap"><span class="vs-bar" style="width:' + pct + '%"></span></div></div>';
       }).join('') +
       '</div>';
   }
