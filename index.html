@@ -2407,8 +2407,12 @@ function renderVentas() {
   if (labelEl) labelEl.textContent = fmtDayLabel(ventasDay);
   const btnNext = document.getElementById('btnVentasNext');
   if (btnNext) btnNext.disabled = isToday;
-  /* Corte Z del día: si ya se hizo se muestra; si no, aviso de que hace falta */
-  const corteZDelDia = [...cortes].reverse().find(c => corteType(c) === 'Z' && c.closedAt && dayKeyOf(c.closedAt) === dayKey);
+  /* Corte Z del día: si ya se hizo se muestra; si no, aviso de que hace falta.
+     Si hoy la caja sigue abierta, el día aún no está cerrado: se muestra el aviso. */
+  const esHoy = dayKey === dayKeyOf(new Date().toISOString());
+  const corteZDelDia = (esHoy && session)
+    ? null
+    : [...cortes].reverse().find(c => corteType(c) === 'Z' && c.closedAt && dayKeyOf(c.closedAt) === dayKey);
   let corteHtml = '';
   if (corteZDelDia) {
     corteHtml = '<div class="venta-corte"><div class="vco-title">Corte de caja Z</div>' +
