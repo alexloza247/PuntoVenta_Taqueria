@@ -556,6 +556,7 @@
   .ventas-stats .vs-col-bar { display: block; width: 100%; max-width: 48px; background: var(--accent-l); border-radius: 8px 8px 0 0; min-height: 4px; }
   .ventas-stats .vs-col-name { font-size: 13px; font-weight: 700; text-align: center; margin-top: 8px; line-height: 1.2; }
   .ventas-stats .vs-col-amt { font-size: 12px; font-weight: 700; color: var(--muted); text-align: center; margin-top: 2px; }
+  .ventas-stats .vs-empty { text-align: center; color: var(--muted); font-size: 14px; font-weight: 700; padding: 64px 10px; }
   .ventas-stats .vs-val { font-size: 16px; font-weight: 900; color: var(--accent); white-space: nowrap; }
   .venta-card {
     background: var(--panel);
@@ -2475,22 +2476,27 @@ function renderVentas() {
   const ventasVistas = load(LS_VENTAS_VISTAS, {}) || {};
   function chartBlock(title, map, unit, key) {
     const rows = [...map.values()].sort((a, b) => (b.qty - a.qty) || (b.total - a.total));
-    if (!rows.length) return '';
-    const max = Math.max(...rows.map(r => r.qty), 1);
     const vista = ventasVistas[key] === 'texto' ? 'texto' : 'graficas';
-    const graficaHtml = '<div class="vs-chart">' +
-      rows.map(r => {
-        const pct = Math.max(4, Math.round((r.qty / max) * 100));
-        return '<div class="vs-col"><span class="vs-col-val">' + r.qty + ' ' + unit + '</span>' +
-          '<div class="vs-col-track"><span class="vs-col-bar" style="height:' + pct + '%"></span></div>' +
-          '<span class="vs-col-name">' + escapeHtml(r.name) + '</span>' +
-          '<span class="vs-col-amt">' + fmt(r.total) + '</span></div>';
-      }).join('') +
-      '</div>';
-    const textoHtml = rows.map(r =>
-      '<div class="vs-row"><div class="vs-line"><span class="vs-name">' + escapeHtml(r.name) + '</span>' +
-      '<span class="vs-val">' + r.qty + ' ' + unit + ' · ' + fmt(r.total) + '</span></div></div>'
-    ).join('');
+    let graficaHtml, textoHtml;
+    if (!rows.length) {
+      graficaHtml = '<div class="vs-empty">Sin ventas este día</div>';
+      textoHtml = '<div class="vs-empty">Sin ventas este día</div>';
+    } else {
+      const max = Math.max(...rows.map(r => r.qty), 1);
+      graficaHtml = '<div class="vs-chart">' +
+        rows.map(r => {
+          const pct = Math.max(4, Math.round((r.qty / max) * 100));
+          return '<div class="vs-col"><span class="vs-col-val">' + r.qty + ' ' + unit + '</span>' +
+            '<div class="vs-col-track"><span class="vs-col-bar" style="height:' + pct + '%"></span></div>' +
+            '<span class="vs-col-name">' + escapeHtml(r.name) + '</span>' +
+            '<span class="vs-col-amt">' + fmt(r.total) + '</span></div>';
+        }).join('') +
+        '</div>';
+      textoHtml = rows.map(r =>
+        '<div class="vs-row"><div class="vs-line"><span class="vs-name">' + escapeHtml(r.name) + '</span>' +
+        '<span class="vs-val">' + r.qty + ' ' + unit + ' · ' + fmt(r.total) + '</span></div></div>'
+      ).join('');
+    }
     return '<div class="ventas-stats" data-chart="' + key + '">' +
       '<div class="vs-head"><div class="vs-title">' + title + '</div>' +
       '<button type="button" class="btn-vista" data-chart="' + key + '">' + (vista === 'texto' ? 'Ver gráfica' : 'Ver en texto') + '</button></div>' +
@@ -2498,10 +2504,11 @@ function renderVentas() {
       '<div class="' + (vista === 'graficas' ? 'vs-texto hidden' : 'vs-texto') + '">' + textoHtml + '</div>' +
       '</div>';
   }
-  const chartsHtml = chartBlock('Tacos por carne', gTacos, 'tacos', 'tacos') + chartBlock('Bebidas por sabor', gBebidas, 'uds', 'bebidas') + chartBlock('Otros', gOtros, 'uds', 'otros');
-  if (chartsHtml) {
-    html += '<div class="ventas-charts">' + chartsHtml + '</div>';
-  }
+  html += '<div class="ventas-charts">' +
+    chartBlock('Tacos por carne', gTacos, 'tacos', 'tacos') +
+    chartBlock('Bebidas por sabor', gBebidas, 'uds', 'bebidas') +
+    chartBlock('Otros', gOtros, 'uds', 'otros') +
+    '</div>';
   [...daySales].reverse().forEach(v => {
     const itemsHtml = v.items.map(i =>
       '<div class="vc-item"><span>' + i.qty + '× ' + escapeHtml(i.name) + '</span>' +
