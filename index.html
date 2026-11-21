@@ -1646,7 +1646,9 @@ let sucursalSuffix = load(LS_SUCURSAL, null) || '';
   if (suf) { sucursalSuffix = suf; save(LS_SUCURSAL, sucursalSuffix); }
 })();
 function nombreCompleto() {
-  const s = String(sucursalSuffix || '').trim();
+  let s = String(sucursalSuffix || '').trim();
+  if (s.startsWith('- ')) s = s.slice(2).trim();
+  else if (s.startsWith('-')) s = s.slice(1).trim();
   return s ? NOMBRE_BASE + ' ' + s : NOMBRE_BASE;
 }
 let nombreSucursal = nombreCompleto();
